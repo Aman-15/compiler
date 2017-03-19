@@ -393,7 +393,6 @@ int *parseInputSourceCode(struct token* tokens) {
 }
 
 void printTreeInorder(FILE *fp, TREENODEPTR tree, struct token **tokens) {
-	//FILE *fp = fopen(file, "w");
 	if (tree != NULL) {
 		struct token *tk = *tokens;
 
@@ -404,8 +403,15 @@ void printTreeInorder(FILE *fp, TREENODEPTR tree, struct token **tokens) {
 			if (tree->t == e)
 				fprintf(fp,"---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
 			else {
-				fprintf(fp,"%s %d %s ---- %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
-					string_tokens[tree->parent->t + count_terminal]);
+				if ((*tokens)->tokenID == NUM)
+					fprintf(fp,"%s %d %s %d %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
+						(*tokens)->val.int_val, string_tokens[tree->parent->t + count_terminal]);
+				else if ((*tokens)->tokenID == RNUM)
+					fprintf(fp,"%s %d %s %f %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
+						(*tokens)->val.float_val, string_tokens[tree->parent->t + count_terminal]);
+				else
+					fprintf(fp,"%s %d %s ---- %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
+						string_tokens[tree->parent->t + count_terminal]);
 				*tokens = (*tokens)->next;
 			}
 		}

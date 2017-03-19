@@ -14,7 +14,7 @@ void appendSymbol(int id);
 void addKeyword(int id, char *keyword);
 int isKeyword(char *word);
 void addID(char *id);
-void addNUM(int n_or_r, char *num);
+void addNUM(int n_or_r, char *num, float value);
 void matchSymbols(char *buf);
 FILE* getStream(FILE *fp, char *buf);
 void generateList(char *file);

@@ -6,6 +6,7 @@ MANIK BHANDARI 2014A7PS088P
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "lexerDef.h"
 // #include "forstring.h"
 char *string_tokens_lexer[] = {
@@ -126,11 +127,17 @@ void addID(char *id) {
     last = last->next;
 }
 
-void addNUM(int n_or_r, char *num) {
+void addNUM(int n_or_r, char *num, float value) {
     struct token *curr = (struct token*)malloc(sizeof(struct token));
 
-    if (n_or_r == 1) curr->tokenID = NUM;
-    else curr->tokenID = RNUM;
+    if (n_or_r == 1) {
+        curr->tokenID = NUM;
+        curr->val.int_val = (int)value;
+    }
+    else {
+        curr->tokenID = RNUM;
+        curr->val.float_val = value;
+    }
     strcpy(curr->lexeme, num);
     curr->next = NULL;
     curr->line_num = line_num;
@@ -177,47 +184,62 @@ void matchSymbols(char *buf) {
         else if (front >= '0' && front <= '9') {
             char num[20];
             int i=0;
-            // int temp1, temp2;
-            // temp1 = temp2 = 0;
-            // int dec=0, pow=0;
+            int temp1, temp2;
+            temp1 = temp2 = 0;
+            int dec=0, power=0;
             num[i++] = front;
+            temp1 = temp1*10 + front-'0';
             front = buf[++index];
             while (front >= '0' && front <= '9') {
+                temp1 = temp1*10 + front-'0';
                 num[i++] = front;
                 front = buf[++index];
             }
 
             if (front != '.') {
                 num[i] = '\0';
-                addNUM(1,num);
+                // printf("%d\n",temp1);
+                addNUM(1,num,temp1);
             }
 
             else {
                 if (buf[index+1] == '.') {
                     num[i] = '\0';
-                    addNUM(1,num);
+                    // printf("%d\n",temp1);
+                    addNUM(1,num,temp1);
                 }
                 else {
                     num[i++] = '.';
                     front = buf[++index];
                     while (front >= '0' && front <= '9') {
+                        temp2 = temp2*10 + front-'0';
+                        dec++;
                         num[i++] = front;
                         front = buf[++index];
                     }
                     if (front == 'E' || front == 'e') {
                         num[i++] = front;
                         front = buf[++index];
+                        int sign=0;
                         if (front == '+' || front == '-') {
+                            if (front == '-')
+                                sign = 1;
                             num[i++] = front;
                             front = buf[++index];
                         }
                         while (front >= '0' && front <= '9') {
+                            power = power*10 + front - '0';
                             num[i++] = front;
                             front = buf[++index];
                         }
+                        if (sign)
+                            power = -1 * power;
                     }
                     num[i] = '\0';
-                    addNUM(0,num);
+                    float number = (float)temp1 + (float)(temp2/(pow(10,dec)));
+					number *= pow(10,power);
+                    // printf("%f\n",number);
+                    addNUM(0,num,number);
                 }
             }
             index--;

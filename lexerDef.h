@@ -26,9 +26,15 @@ enum enum_token {
     caseStmt
 };
 
+union value {
+    int int_val;
+    float float_val;
+};
+
 struct token {
     enum enum_token tokenID;
     char lexeme[20];
+    union value val;
     struct token *prev, *next;
     int line_num;
 };
