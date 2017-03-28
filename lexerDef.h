@@ -23,7 +23,8 @@ enum enum_token {
     iterativeStmt, var, whichId, assignmentStmt, moduleReuseStmt, whichStmt, lvalueIDStmt, lvalueARRStmt, expression, 
     index1, optional, idList, idList2, arithmeticOrBooleanExpr, arithmeticExpr, anyTerm, arithmeticOrBooleanExpr2, 
     logicalOp, anyTerm2, relationalOp, term, arithmeticExpr2, op1, factor, term2, op2, caseStmts, default1, value, 
-    caseStmt
+    booleanOrNonBooleanArithmeticExpr, expressionWithLogOp, expressionWithRelOp, 
+    negOrPosArithmeticExpr, caseStmt
 };
 
 union value {

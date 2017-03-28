@@ -10,9 +10,9 @@ MANIK BHANDARI 2014A7PS088P
 
 int main(int argc, char *argv[])
 {
-	 inputGrammar("grammar.txt");
-	 generateFirstSet("firstSet.txt");
-	 generateFollowSet("FollowSet.txt");
+	 inputGrammar("grammar_v2.txt");
+	 generateFirstSet("FirstSet_v2.txt");
+	 generateFollowSet("FollowSet_v2.txt");
 	 printf("FIRST and FOLLOW set automated\n");
 	 generateList(argv[1]);
 	//printlist();

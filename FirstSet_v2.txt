@@ -1,0 +1,55 @@
+moduleDeclarations e DECLARE
+moduleDeclaration DECLARE
+otherModules e DEF
+driverModule DRIVERDEF
+module DEF
+ret RETURNS e
+input_plist ID
+input_plist2 COMMA e
+output_plist ID
+output_plist2 COMMA e
+dataType INTEGER REAL BOOLEAN ARRAY
+type INTEGER REAL BOOLEAN
+moduleDef START
+statements e GET_VALUE PRINT DECLARE FOR WHILE ID USE SQBO SWITCH
+ioStmt GET_VALUE PRINT
+var ID NUM RNUM
+whichId SQBO e
+assignmentStmt ID
+lvalueIDStmt ASSIGNOP
+lvalueARRStmt SQBO
+index1 NUM ID
+moduleReuseStmt USE SQBO
+optional SQBO e
+idList ID
+idList2 COMMA e
+expression MINUS BO ID NUM RNUM
+booleanOrNonBooleanArithmeticExpr BO ID NUM RNUM
+arithmeticOrBooleanExpr BO ID NUM RNUM
+arithmeticOrBooleanExpr2 e AND OR PLUS MINUS LT LE GT GE EQ NE MUL DIV
+expressionWithLogOp e AND OR
+anyTerm2 BO ID NUM RNUM
+expressionWithRelOp e LT LE GT GE EQ NE
+negOrPosArithmeticExpr MINUS BO ID NUM RNUM
+arithmeticExpr2	e PLUS MINUS
+term2 e MUL DIV
+op1 PLUS MINUS
+op2 MUL DIV
+logicalOp AND OR
+relationalOp LT LE GT GE EQ NE
+declareStmt DECLARE
+conditionalStmt SWITCH
+caseStmts CASE
+caseStmt CASE e
+value NUM TRUE FALSE
+default1 DEFAULT e
+iterativeStmt FOR WHILE
+range NUM
+statement GET_VALUE PRINT DECLARE FOR WHILE ID USE SQBO SWITCH
+simpleStmt ID USE SQBO
+whichStmt ASSIGNOP SQBO
+factor ID NUM RNUM
+program e DECLARE DRIVERDEF DEF
+term ID NUM RNUM
+arithmeticExpr ID NUM RNUM
+anyTerm ID NUM RNUM

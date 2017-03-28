@@ -5,6 +5,6 @@ OBJFILES =parser.o lexer.o driver.o
 TARGET = stage1exe
 all: $(TARGET)
 $(TARGET): $(OBJFILES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES) $(LDFLAGS) -lm
 clean:
 	rm -f $(OBJFILES) $(TARGET)
