@@ -170,17 +170,17 @@ void generateFollowSet(char *FollowSetFile) {
 		int len = strlen(buf);
 		char front = buf[index];
 		while (index < len) {
-			int t_or_nt;
-			if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x') || buf[index] == '$')
-				t_or_nt = 1;
-			else if (front >= 'a' && front <= 'z')
-				t_or_nt = 0;
+			// int t_or_nt;
+			// if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x') || buf[index] == '$')
+			// 	t_or_nt = 1;
+			// else if (front >= 'a' && front <= 'z')
+			// 	t_or_nt = 0;
 			if ((front >= 'A' && front <= 'Z') || (front >= 'a' && front <= 'z') || buf[index] == '$') {
 				char id[40];
 				int i=0;
 				id[i++] = front;
 				index++;
-				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || (buf[index]>='0' && buf[index]<='9') && buf[index]!='\n')
+				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || ((buf[index]>='0' && buf[index]<='9') && buf[index]!='\n'))
 					id[i++] = buf[index++];
 				id[i] = '\0';
 				int j=0;
@@ -225,17 +225,17 @@ void generateFirstSet(char *FirstSetFile) {
 		int len = strlen(buf);
 		char front = buf[index];
 		while (index < len) {
-			int t_or_nt;
-			if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x'))
-				t_or_nt = 1;
-			else if (front >= 'a' && front <= 'z')
-				t_or_nt = 0;
+			// int t_or_nt;
+			// if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x'))
+			// 	t_or_nt = 1;
+			// else if (front >= 'a' && front <= 'z')
+			// 	t_or_nt = 0;
 			if ((front >= 'A' && front <= 'Z') || (front >= 'a' && front <= 'z')) {
 				char id[40];
 				int i=0;
 				id[i++] = front;
 				index++;
-				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || (buf[index]>='0' && buf[index]<='9') && buf[index]!='\n')
+				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || ((buf[index]>='0' && buf[index]<='9') && buf[index]!='\n'))
 					id[i++] = buf[index++];
 				id[i] = '\0';
 				int j=0;
@@ -254,7 +254,7 @@ void generateFirstSet(char *FirstSetFile) {
 	fclose(read);
 }
 
-LISTPTR* inputGrammar(char *gramFile) {
+void inputGrammar(char *gramFile) {
 	FILE *read = fopen(gramFile, "r");
 	char buf[201];
 	int rules=count_rule;
@@ -270,7 +270,7 @@ LISTPTR* inputGrammar(char *gramFile) {
 		char front = buf[index];
 		while (index < len) {
 			int t_or_nt;
-			if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x'))
+			if ((front >= 'A' && front <= 'Z') || (front == 'e' && buf[index+1] != 'x'))
 				t_or_nt = 1;
 			else if (front >= 'a' && front <= 'z')
 				t_or_nt = 0;
@@ -279,7 +279,7 @@ LISTPTR* inputGrammar(char *gramFile) {
 				int i=0;
 				id[i++] = front;
 				index++;
-				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || (buf[index]>='0' && buf[index]<='9') && buf[index]!='\n')
+				while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || ((buf[index]>='0' && buf[index]<='9') && buf[index]!='\n'))
 					id[i++] = buf[index++];
 				id[i] = '\0';
 				int j=0;
@@ -393,27 +393,24 @@ int *parseInputSourceCode(struct token* tokens) {
 	return rules;
 }
 
-void printTreeInorder(FILE *fp, TREENODEPTR tree, struct token **tokens) {
+void printTreeInorder(FILE *fp, TREENODEPTR tree) {
 	if (tree != NULL) {
-		struct token *tk = *tokens;
-
 		if (tree->child_count > 0)
-			printTreeInorder(fp,tree->child[0], tokens);
+			printTreeInorder(fp,tree->child[0]);
 		
 		if(tree->t_or_nt == 1) {
 			if (tree->t == e)
 				fprintf(fp,"---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
 			else {
-				if ((*tokens)->tokenID == NUM)
-					fprintf(fp,"%s %d %s %d %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
-						(*tokens)->val.int_val, string_tokens[tree->parent->t + count_terminal]);
-				else if ((*tokens)->tokenID == RNUM)
-					fprintf(fp,"%s %d %s %f %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
-						(*tokens)->val.float_val, string_tokens[tree->parent->t + count_terminal]);
+				if (tree->t == NUM)
+					fprintf(fp,"%s %d %s %d %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+						tree->val.int_val, string_tokens[tree->parent->t + count_terminal]);
+				else if (tree->t == RNUM)
+					fprintf(fp,"%s %d %s %f %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+						tree->val.float_val, string_tokens[tree->parent->t + count_terminal]);
 				else
-					fprintf(fp,"%s %d %s ---- %s yes ----\n",(*tokens)->lexeme, (*tokens)->line_num, string_tokens[(*tokens)->tokenID], 
+					fprintf(fp,"%s %d %s ---- %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
 						string_tokens[tree->parent->t + count_terminal]);
-				*tokens = (*tokens)->next;
 			}
 		}
 		else
@@ -422,7 +419,42 @@ void printTreeInorder(FILE *fp, TREENODEPTR tree, struct token **tokens) {
 		
 		int i;
 		for(i=1; i<tree->child_count; i++)
-			printTreeInorder(fp,tree->child[i], tokens);
+			printTreeInorder(fp,tree->child[i]);
+	}
+}
+
+void setFields(TREENODEPTR tree, struct token **tokens) {
+	if (tree != NULL) {
+
+		if (tree->child_count > 0)
+			setFields(tree->child[0], tokens);
+		
+		if(tree->t_or_nt == 1) {
+			if (tree->t == e)
+				;
+			else {
+				if ((*tokens)->tokenID == NUM) {
+					strcpy(tree->lexeme, (*tokens)->lexeme);
+					tree->val.int_val = (*tokens)->val.int_val;
+					tree->line_num = (*tokens)->line_num;
+				}
+				else if ((*tokens)->tokenID == RNUM) {
+					strcpy(tree->lexeme, (*tokens)->lexeme);
+					tree->val.float_val = (*tokens)->val.float_val;
+					tree->line_num = (*tokens)->line_num;
+				}
+				else {
+					strcpy(tree->lexeme, (*tokens)->lexeme);
+					tree->line_num = (*tokens)->line_num;
+				}
+				
+				*tokens = (*tokens)->next;
+			}
+		}
+		
+		int i;
+		for(i=1; i<tree->child_count; i++)
+			setFields(tree->child[i], tokens);
 	}
 }
 

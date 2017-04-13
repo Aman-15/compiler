@@ -18,9 +18,9 @@ void insert(LISTPTR ls, enum enum_token t, int t_or_nt);
 void populateTable();
 void generateFollowSet(char *s);
 void generateFirstSet(char *s);
-LISTPTR* inputGrammar(char *gramFile);
+void inputGrammar(char *gramFile);
 int *parseInputSourceCode(struct token* tokens);
-void printTreeInorder(FILE *fp, TREENODEPTR tree, struct token **tokens);
+void printTreeInorder(FILE *fp, TREENODEPTR tree);
 TREENODEPTR generateParseTree(int *ruleList, int *index, int len, TREENODEPTR parent);
 
 #endif

@@ -1,0 +1,56 @@
+/*
+BATCH NUMBER 75
+AMAN AGARWAL 2014A7PS042P
+MANIK BHANDARI 2014A7PS088P
+*/
+
+#ifndef SYMBOLTABLE_DEF_H
+#define SYNMOLTABLE_DEF_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "lexerDef.h"
+
+enum FuncStatus {
+    declared, defined
+};
+
+struct IdTuple {
+    char name[20];
+    int line_dec, line_ref;
+    enum enum_token type;
+    struct IdTuple *next;
+};
+
+struct IdTable {
+    int scopeId;
+    int count;
+    struct IdTable *child, *next, *parent;
+    struct IdTuple *idTuple;
+};
+
+struct Parameters {
+    char name[20];
+    enum enum_token type;
+    struct Parameters *next;
+};
+
+struct FuncTable {
+    char name[20];
+    struct Parameters *out, *in;
+    enum FuncStatus status;
+    struct IdTable *idTable;
+    struct FuncTable *next;
+};
+
+struct tnllnode {
+	TREENODEPTR node;
+	struct tnllnode *next;
+};
+
+struct tnll {
+	int count;
+	struct tnllnode *first;
+};
+
+#endif

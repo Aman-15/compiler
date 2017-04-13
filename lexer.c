@@ -412,10 +412,13 @@ struct token* getNextToken() {
 
 void printlist() {
     struct token *temp = head->next;
+    // FILE *fp = fopen("TokenList.txt", "w");
     while (temp != NULL) {
         printf("%s %s %d\n",string_tokens_lexer[temp->tokenID], temp->lexeme, temp->line_num);
+        // fprintf(fp, "%s %s %d\n",string_tokens_lexer[temp->tokenID], temp->lexeme, temp->line_num);
         temp = temp->next;
     }
+    // fclose(fp);
 }
 
 void removeComments(char *testcaseFile, char *cleanFile) {

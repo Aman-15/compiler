@@ -22,7 +22,7 @@ struct token* getNextToken();
 void printlist();
 void removeComments(char *testcaseFile, char *cleanFile);
 void removeCommentsConsole(char *testcaseFile);
-struct token* getFirst(); 
+struct token* getFirst();
 struct token *returnHead();
 
 #endif
