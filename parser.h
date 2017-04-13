@@ -22,5 +22,6 @@ void inputGrammar(char *gramFile);
 int *parseInputSourceCode(struct token* tokens);
 void printTreeInorder(FILE *fp, TREENODEPTR tree);
 TREENODEPTR generateParseTree(int *ruleList, int *index, int len, TREENODEPTR parent);
+void setFields(TREENODEPTR tree, struct token **tokens);
 
 #endif

@@ -449,6 +449,8 @@ void setFields(TREENODEPTR tree, struct token **tokens) {
 				}
 				
 				*tokens = (*tokens)->next;
+				while (*tokens && (*tokens)->tokenID == COMMENTMARK)
+					*tokens = (*tokens)->next;
 			}
 		}
 		

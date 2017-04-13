@@ -7,6 +7,7 @@ MANIK BHANDARI 2014A7PS088P
 #include <malloc.h>
 #include "lexer.h"
 #include "parser.h"
+#include "SymbolTable.h"
 
 int main(int argc, char *argv[])
 {
@@ -44,6 +45,9 @@ int main(int argc, char *argv[])
 			setFields(root, &(returnHead()->next));
 			fp = fopen(argv[2], "w");
 			printTreeInorder(fp, root);
+			printf("Parse Tree Printed\n");
+			// printf("%s\n", string_tokens1[root->t + count_terminal]);
+			makeTable(root);
 			break;
 	}
 	return 0;

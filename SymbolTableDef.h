@@ -9,16 +9,18 @@ MANIK BHANDARI 2014A7PS088P
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lexerDef.h"
+#include "parserDef.h"
 
 enum FuncStatus {
-    declared, defined
+    declared, defined, none
 };
 
 struct IdTuple {
     char name[20];
     int line_dec, line_ref;
     enum enum_token type;
+    int arr_or_not;
+    int start, end;
     struct IdTuple *next;
 };
 
@@ -32,6 +34,8 @@ struct IdTable {
 struct Parameters {
     char name[20];
     enum enum_token type;
+    int arr_or_not;
+    int start, end;
     struct Parameters *next;
 };
 
