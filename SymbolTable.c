@@ -5,6 +5,7 @@
 4. CHeck if used module is ever defined...during ast.
 5. Iterative and switch statements, iterator can't be declared.
 6. Testcase4_new - Switch-Case "index" not found.
+7. Redifinition of index int interative statements not done.
 */
 
 /*
@@ -81,12 +82,23 @@ struct FuncTable* findInFunctionList(char *name) {
 
 //Recursively checks for the id upto the global tabel.
 int checkIdentifierifDeclared(struct IdTable *table, char *name) {
-    if(table == NULL)
+    if(table == NULL){
+        // if(strcmp(name,"var_2_") == 0){
+        //     printf("because of NULL\n");
+        // }
         return 0;
+    }
 
     if (checkinTable(table, name) == 0) {
-        if (table->parent)
-            return checkinTable(table->parent, name);
+        if (table->parent){
+            // if(strcmp(name,"var_2_") == 0){
+            //     printf("because parent\n");
+            // }
+            return checkIdentifierifDeclared(table->parent, name);
+        }
+        // if(strcmp(name,"var_2_") == 0){
+        //         printf("because parent is null and not in current\n");
+        // }
         return 0;
     }
     return 1;
@@ -97,9 +109,20 @@ int checkinTable(struct IdTable *table, char *name) {
     if (table == NULL)
         return 0;
 
+    // printf("%d %s\n", table->scopeId, name);
     struct IdTuple *tuple = table->idTuple;
-
+    // if(tuple == NULL){
+    //     if(strcmp(name, "var_2_") == 0){
+    //         printf("checking for %s\n", name);
+    //         printf("first tuple of scope %d is null!\n", table->scopeId);
+    //     }
+    // }
+    // int i= 0;
     while (tuple) {
+        // i++;
+        // if(strcmp(name, "var_2_") == 0){
+        //     printf("i: %d tuple is %s against %s\n",i, tuple->name, name);
+        // }
         if (strcmp(tuple->name, name) == 0)
             return 1;
         tuple = tuple->next;
@@ -202,6 +225,14 @@ void addTupleEntry(struct IdTable *currIdTable, char *name, int line_dec, int li
     temp->arr_or_not = arr_or_not;
 }
 
+void printIdTable(struct IdTable *curr) {
+    struct IdTuple *tuple = curr->idTuple;
+    while (tuple) {
+        printf("%s\n", tuple->name);
+        tuple  = tuple->next;
+    }
+}
+
 //pop_stulating the symbol tables
 void makeTable(TREENODEPTR treeNode) {
     
@@ -215,7 +246,6 @@ void makeTable(TREENODEPTR treeNode) {
     funcList = NULL;
 
     while (!isEmpty(stack)) {
-
 
         TREENODEPTR temp = top_st(stack);
         
@@ -249,15 +279,13 @@ void makeTable(TREENODEPTR treeNode) {
                     }
                     else {
                         //ERROR (Re declared)
-                        printf("1 Re-declaration Error\n");
+                        printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                     }
                 }
 
                 else {                          //Eg.2 declare var_1_, var_2_, var_3_:integer;
-
-                    //handle if id declared is same as function parameter
                     TREENODEPTR _dtype = top_st(stack)->parent->child[3];
-                    TREENODEPTR _idlist = top_st(stack)->parent->child[1]; //id list is the top_st of stack also
+                    TREENODEPTR _idlist = top_st(stack); //id list is the top_st of stack also
 
                     pop_st(stack); //IdList pop_stped
                     pop_st(stack); //COLON pop_stped
@@ -266,11 +294,11 @@ void makeTable(TREENODEPTR treeNode) {
 
                     if (checkinTable(currIdTable, _idlist->child[0]->lexeme) == 1) {
                         //error: already declared
-                        printf("2 Already Declared %s\n", _idlist->child[0]->lexeme);
+                        printf("line:%d \"%s\" Re-declaration Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
                     }
                     else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, _idlist->child[0]->lexeme) == 1) {
                         //error: already declared
-                        printf("2.1 Already Declared in Parameters %s\n", _idlist->child[0]->lexeme);
+                        printf("line:%d \"%s\" Re-declaration of Parameters Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
 
                     }
                     else {
@@ -287,24 +315,21 @@ void makeTable(TREENODEPTR treeNode) {
                     while(cur->child[0]->t != e) {
 
                         TREENODEPTR n = cur->child[1];
-                        if (checkinTable(currIdTable, n->lexeme) == 1) {
-                            //Error (Already declared)
-                        printf("3 Already Declared %s\n", n->lexeme);
-                        }
-                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, _idlist->child[0]->lexeme) == 1) {
-                            //error: already declared
-                            printf("3.1 Already Declared in Parameters %s\n", _idlist->child[0]->lexeme);
 
+                        if (checkinTable(currIdTable, n->lexeme) == 1) {
+                            printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
+                        }
+                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme) == 1) {
+                            printf("line:%d \"%s\" Re-declaration of Parameters Error\n", n->line_num, n->lexeme);
                         }
                         else {
-                            //Handle Arrays separately
                             if (_dtype->child[0]->t == ARRAY) {
                                 int start = _dtype->child[2]->child[0]->val.int_val;
                                 int end = _dtype->child[2]->child[2]->val.int_val;
-                                addTupleEntry(currIdTable, _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
+                                addTupleEntry(currIdTable, n->lexeme, n->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
                             }
                             else
-                                addTupleEntry(currIdTable, _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
+                                addTupleEntry(currIdTable, n->lexeme, n->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
                         }
                         cur = cur->child[2];
                     }
@@ -312,7 +337,6 @@ void makeTable(TREENODEPTR treeNode) {
             }
 
             else if (temp->t == START) {
-                //Now we have a new Scope
 
                 if (currFuncTable->idTable == NULL) {//The current function has no scope yet
                     currFuncTable->idTable = getNewTable();
@@ -353,11 +377,9 @@ void makeTable(TREENODEPTR treeNode) {
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
                         if (checkinTable(currIdTable, n->lexeme) == 1) {
-                            //Error (Already declared)
-                        printf("4 Already Declared %s\n", n->lexeme);
+                        printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
                         else {
-                            //Handle Arrays separately
                             in->next = (struct Parameters *)malloc(sizeof(struct Parameters));
                             strcpy(in->next->name, n->lexeme);
                             if (_dtype->child[0]->t == ARRAY) {
@@ -398,11 +420,9 @@ void makeTable(TREENODEPTR treeNode) {
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
                         if (checkinTable(currIdTable, n->lexeme) == 1) {
-                            //Error (Already declared)
-                        printf("5 Already Declared %s\n", n->lexeme);
+                        printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
                         else {
-                            //Handle Arrays separately
                             
                             out->next = (struct Parameters *)malloc(sizeof(struct Parameters));
                             strcpy(out->next->name, n->lexeme);
@@ -424,8 +444,7 @@ void makeTable(TREENODEPTR treeNode) {
 
                 else {
                     if (checkIdentifierifDeclared(currIdTable, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == 0) {
-                        //Error
-                        printf("6 Variable Not Declared %s %s at line %d\n", string_tokens1[temp->t], temp->lexeme, temp->line_num);
+                        printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
                     }
                 }
             }
@@ -435,10 +454,9 @@ void makeTable(TREENODEPTR treeNode) {
                 pop_st(stack); //function id pop_stped
 
                 if(findInFunctionList(n->lexeme) == NULL){
-                    //error
-                    printf("7 No declaration of the function %s\n", n->lexeme);
+                    printf("line:%d module \"%s\" not declared\n", n->line_num, n->lexeme);
                 }
-                //Handle if module is never defined
+                //Handle if module is never defined.. to be done after 
             }
             else if(temp->t == DEF){
                 pop_st(stack); //module pop_stped
@@ -448,8 +466,7 @@ void makeTable(TREENODEPTR treeNode) {
                 struct FuncTable *f = findInFunctionList(n->lexeme);
                 if(f){
                     if(f->status == defined){
-                        //error: redifining a function
-                        printf("8 Re-defined %s\n", n->lexeme);
+                        printf("line:%d module \"%s\" already defined\n", n->line_num, n->lexeme);
                     }
                     else{
                         currFuncTable = f;
@@ -458,7 +475,6 @@ void makeTable(TREENODEPTR treeNode) {
                     }
                 }
                 else {
-                    //add to function list and give memory
                     currFuncTable = addFunc(currFuncTable);
                     strcpy(currFuncTable->name, n->lexeme);
                     currFuncTable->status = defined;

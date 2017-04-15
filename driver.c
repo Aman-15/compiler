@@ -35,7 +35,14 @@ int main(int argc, char *argv[])
 			printlist();
 			break;
 		case 3:
+			// printlist();
 			rules = parseInputSourceCode(head->next);
+			for(i = 0; rules[i] != -1; i++);
+			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
+			setFields(root, &(returnHead()->next));
+			fp = fopen(argv[2], "w");
+			printTreeInorder(fp, root);
 			break;
 		case 4:
 			rules = parseInputSourceCode(head->next);

@@ -49,15 +49,16 @@ void push(LISTPTR stack, enum enum_token t, int t_or_nt)
 
 void pop(LISTPTR stack)
 {
-	if(stack->first == NULL)
+	if(stack == NULL || stack->first == NULL)
 	{
 		printf("STACK IS EMPTY!! EXITING\n");
 		return;
 	}
+	// printf("%s\n", string_tokens[top(stack)->t+top(stack)->t_or_nt*count_terminal]);
 	NODEPTR temp = top(stack);
 	stack->first = stack->first->next;
 	temp->next = NULL;
-	//free(temp);
+	free(temp);
 	stack->count--;
 }
 
@@ -87,7 +88,7 @@ void populateTable() {
     }
     NODEPTR n1, n2;
     NODEPTR n;
-	// FILE *out = fopen("parseTable entries.txt", "w");
+	FILE *out = fopen("parseTable entries.txt", "w");
     for(i=0; i<count_rule; i++) {
         n = grammar[i]->first;
 		// printf("%d\n", i);
@@ -99,7 +100,7 @@ void populateTable() {
             if (n1->t_or_nt) {
                 if (n1->t != e) {
                     parseTable[n->t][n1->t] = i;
-					// fprintf(out, "1 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
+					fprintf(out, "1 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
 					break;
 				}
                 else {
@@ -107,7 +108,7 @@ void populateTable() {
                     n1 = follow[n->t]->first;
                     while (n1) {
                         parseTable[n->t][n1->t] = i;
-						// fprintf(out, "2 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
+						fprintf(out, "2 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
                         n1 = n1->next;
                     }
                 }
@@ -116,7 +117,7 @@ void populateTable() {
                 n2 = first[n1->t]->first;
                 while (n2) {
                     if (n2->t != e) {
-                        // fprintf(out, "3 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n2->t]);
+                        fprintf(out, "3 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n2->t]);
                         parseTable[n->t][n2->t] = i;
 					}
                     else
@@ -134,13 +135,13 @@ void populateTable() {
             n1 = follow[n->t]->first;
             while (n1) {
                 parseTable[n->t][n1->t] = i;
-                // fprintf(out, "1 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
+                fprintf(out, "1 inserted rule %d at %s,%s\n",i,string_tokens[n->t+count_terminal],string_tokens[n1->t]);
                 n1 = n1->next;
             }
         }
     }
     //printf("%d\n", parseTable[20][20]);
-	// fclose(out);
+	fclose(out);
 }
 
 
@@ -300,14 +301,18 @@ void inputGrammar(char *gramFile) {
 
 int *parseInputSourceCode(struct token* tokens) {
 	//printf("%d\n", follow[otherModules]->count);
-	int *rules = (int *)malloc(1000*sizeof(int));
+	int *rules = (int *)malloc(10000*sizeof(int));
 	int i = 0; 
-	for(i = 0; i < 1000; i++) rules[i] = -1;
+	for(i = 0; i < 10000; i++) rules[i] = -1;
 	int index = 0;
 	LISTPTR stack = (LISTPTR)malloc(sizeof(struct linkedlist));
 	stack->count = 0;
 	stack->first = NULL;
 	struct token *tk = tokens;
+	while(tk && tk->tokenID == COMMENTMARK) {
+		// printf("Skipping comments\n");
+		tk = tk->next;
+	}
 	push(stack, $, 1);
 	push(stack, program, 0);
 	NODEPTR X = top(stack);
@@ -316,6 +321,7 @@ int *parseInputSourceCode(struct token* tokens) {
 		// if(X->t_or_nt == 1)
 		// 	printf("%s\n", string_tokens[X->t]);
 		// else printf("%s\n", string_tokens[X->t + count_terminal]);
+
 		if(X->t_or_nt == 1)
 		{
 			if(X->t == e)
@@ -324,12 +330,14 @@ int *parseInputSourceCode(struct token* tokens) {
 			{
 				pop(stack);
 				tk = tk->next;
+				// if (tk)
+				// 	printf("%s\n", string_tokens[tk->tokenID]);
 				while(tk && tk->tokenID == COMMENTMARK) 
 					tk = tk->next;
 			}
 			else {
-				printf("The token %s for lexeme %s does not match at line %d. The expected token here is %s\n", string_tokens[tk->tokenID],
-					tk->lexeme, tk->line_num, string_tokens[X->t]);
+				printf("line:%d The token %s for lexeme %s does not match. The expected token here is %s\n", tk->line_num, string_tokens[tk->tokenID],
+					tk->lexeme, string_tokens[X->t]);
 				break; 
 			}
 		}
@@ -354,9 +362,9 @@ int *parseInputSourceCode(struct token* tokens) {
 
 			}
 			else if(parseTable[X->t][tk->tokenID] == -1) {
-				//printf("%s\n", string_tokens[X->t + count_terminal]);
-				//printf("%s\n", string_tokens[tk->tokenID]);
-				printf("Token mismatch\n");
+				printf("line:%d Token mismatch ", tk->line_num);
+				printf("%s ", string_tokens[X->t + count_terminal]);
+				printf("%s\n", string_tokens[tk->tokenID]);
 				break; //ERROR HANDLING
 			}
 			else
@@ -444,8 +452,11 @@ void setFields(TREENODEPTR tree, struct token **tokens) {
 					tree->line_num = (*tokens)->line_num;
 				}
 				else {
+						while (*tokens && (*tokens)->tokenID == COMMENTMARK)
+							*tokens = (*tokens)->next;
 					strcpy(tree->lexeme, (*tokens)->lexeme);
 					tree->line_num = (*tokens)->line_num;
+
 				}
 				
 				*tokens = (*tokens)->next;

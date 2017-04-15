@@ -13,7 +13,7 @@ type INTEGER REAL BOOLEAN
 moduleDef START
 statements e GET_VALUE PRINT DECLARE FOR WHILE ID USE SQBO SWITCH
 ioStmt GET_VALUE PRINT
-var ID NUM RNUM
+var ID NUM RNUM TRUE FALSE
 whichId SQBO e
 assignmentStmt ID
 lvalueIDStmt ASSIGNOP
@@ -23,14 +23,14 @@ moduleReuseStmt USE SQBO
 optional SQBO e
 idList ID
 idList2 COMMA e
-expression MINUS BO ID NUM RNUM
-booleanOrNonBooleanArithmeticExpr BO ID NUM RNUM
-arithmeticOrBooleanExpr BO ID NUM RNUM
+expression MINUS BO ID NUM RNUM TRUE FALSE
+booleanOrNonBooleanArithmeticExpr BO ID NUM RNUM FALSE TRUE
+arithmeticOrBooleanExpr BO ID NUM RNUM TRUE FALSE
 arithmeticOrBooleanExpr2 e AND OR PLUS MINUS LT LE GT GE EQ NE MUL DIV
 expressionWithLogOp e AND OR
-anyTerm2 BO ID NUM RNUM
+anyTerm2 BO ID NUM RNUM FALSE TRUE
 expressionWithRelOp e LT LE GT GE EQ NE
-negOrPosArithmeticExpr MINUS BO ID NUM RNUM
+negOrPosArithmeticExpr MINUS BO ID NUM RNUM FALSE TRUE
 arithmeticExpr2	e PLUS MINUS
 term2 e MUL DIV
 op1 PLUS MINUS
@@ -48,8 +48,8 @@ range NUM
 statement GET_VALUE PRINT DECLARE FOR WHILE ID USE SQBO SWITCH
 simpleStmt ID USE SQBO
 whichStmt ASSIGNOP SQBO
-factor ID NUM RNUM
+factor ID NUM RNUM FALSE TRUE
 program e DECLARE DRIVERDEF DEF
-term ID NUM RNUM
-arithmeticExpr ID NUM RNUM
-anyTerm ID NUM RNUM
+term ID NUM RNUM FALSE TRUE
+arithmeticExpr ID NUM RNUM TRUE FALSE
+anyTerm ID NUM RNUM TRUE FALSE

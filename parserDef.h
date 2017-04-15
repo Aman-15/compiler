@@ -12,7 +12,7 @@ MANIK BHANDARI 2014A7PS088P
 
 #define count_nonTerminal caseStmt+1
 #define count_terminal e+1
-#define count_rule 105
+#define count_rule 107
 
 struct node {
 	enum enum_token t;

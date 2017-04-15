@@ -34,6 +34,8 @@ ioStmt PRINT BO var BC SEMICOL
 var ID whichId
 var NUM
 var RNUM
+var TRUE
+var FALSE
 whichId SQBO ID SQBC
 whichId e
 simpleStmt assignmentStmt

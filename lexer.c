@@ -175,7 +175,7 @@ void matchSymbols(char *buf) {
             if (type != -1)
                 addKeyword(type, id);
             else if (i > 8) {
-                printf(" Identifier at line %d is longer than the prescribed length\n", line_num);
+                printf("line:%d Identifier is longer than the prescribed length\n", line_num);
             }
             else
                 addID(id);
@@ -263,7 +263,7 @@ void matchSymbols(char *buf) {
                 appendSymbol(4);
             }
             else
-                printf("Unknown Symbol !%c at line %d", buf[index+1], line_num);
+                printf("Unknown Symbol \"!%c\" at line %d\n", buf[index+1], line_num);
         }
 
         else if (front == '.') {
@@ -272,7 +272,7 @@ void matchSymbols(char *buf) {
                 appendSymbol(5);
             }
             else
-                printf("Unknown Symbol .%c at line %d", buf[index+1], line_num);
+                printf("Unknown Symbol \".%c\" at line %d\n", buf[index+1], line_num);
         }
 
         else if (front == '>') {
@@ -302,7 +302,7 @@ void matchSymbols(char *buf) {
                 appendSymbol(10);
             }
             else
-                printf("Unknown Symbol =%c at line %d", buf[index+1], line_num);
+                printf("Unknown Symbol \"=%c\" at line %d\n", buf[index+1], line_num);
         }
         else if (front == '-')
             appendSymbol(11);
@@ -360,8 +360,6 @@ void matchSymbols(char *buf) {
             appendSymbol(22);
         else if (front == '\n')
             line_num++;
-        // else if (front != ' ' || front != '\t')
-        //     printf("Unknown pattern %c at line %d\n", front, line_num);
         
         front = buf[++index];
 		while (front == ' ' || front == '\t')
