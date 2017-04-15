@@ -7,8 +7,8 @@ MANIK BHANDARI 2014A7PS088P
 #include <malloc.h>
 #include "lexer.h"
 #include "parser.h"
-#include "SymbolTable.h"
-
+// #include "SymbolTable.h"
+#include "AST.h"
 int main(int argc, char *argv[])
 {
 	inputGrammar("grammar_v2.txt");
@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
 	int i = 0;
 	FILE *fp;
 	TREENODEPTR root;
+	struct ASTNode *ast_root;
 	switch(op)
 	{
 		case 1:
@@ -55,7 +56,14 @@ int main(int argc, char *argv[])
 			printf("Parse Tree Printed\n");
 			// printf("%s\n", string_tokens1[root->t + count_terminal]);
 			makeTable(root);
+			printf("Symbol Table generated\n");
+			ast_root = generateAST(root);
+			printf("AST generated\n");
+			
 			break;
 	}
+	// for(int i = 0; i < ast_root->child_count; i++){
+	// 			printf("%s\n", ast_root->child[i]);
+	// 		}
 	return 0;
 }

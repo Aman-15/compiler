@@ -36,6 +36,7 @@ struct parseTreeNode {
     struct parseTreeNode **child;
     struct parseTreeNode *parent;
     int child_count;
+    struct IdTuple  *tuple;
 };
 typedef struct parseTreeNode *TREENODEPTR;
 

@@ -34,6 +34,7 @@ struct IdTable {
 struct Parameters {
     char name[20];
     enum enum_token type;
+    int line_num;
     int arr_or_not;
     int start, end;
     struct Parameters *next;

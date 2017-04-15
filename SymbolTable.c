@@ -81,7 +81,7 @@ struct FuncTable* findInFunctionList(char *name) {
 }
 
 //Recursively checks for the id upto the global tabel.
-int checkIdentifierifDeclared(struct IdTable *table, char *name) {
+int checkIdentifierifDeclared(struct IdTable *table, TREENODEPTR currnode, char *name) {
     if(table == NULL){
         // if(strcmp(name,"var_2_") == 0){
         //     printf("because of NULL\n");
@@ -94,12 +94,20 @@ int checkIdentifierifDeclared(struct IdTable *table, char *name) {
             // if(strcmp(name,"var_2_") == 0){
             //     printf("because parent\n");
             // }
-            return checkIdentifierifDeclared(table->parent, name);
+            return checkIdentifierifDeclared(table->parent, currnode, name);
         }
         // if(strcmp(name,"var_2_") == 0){
         //         printf("because parent is null and not in current\n");
         // }
         return 0;
+    }
+    struct IdTuple *tuple = table->idTuple;
+    while (tuple) {
+        if (strcmp(tuple->name, name) == 0){
+            currnode->tuple = tuple;
+            break;
+        }
+        tuple = tuple->next;
     }
     return 1;
 }
@@ -111,18 +119,7 @@ int checkinTable(struct IdTable *table, char *name) {
 
     // printf("%d %s\n", table->scopeId, name);
     struct IdTuple *tuple = table->idTuple;
-    // if(tuple == NULL){
-    //     if(strcmp(name, "var_2_") == 0){
-    //         printf("checking for %s\n", name);
-    //         printf("first tuple of scope %d is null!\n", table->scopeId);
-    //     }
-    // }
-    // int i= 0;
     while (tuple) {
-        // i++;
-        // if(strcmp(name, "var_2_") == 0){
-        //     printf("i: %d tuple is %s against %s\n",i, tuple->name, name);
-        // }
         if (strcmp(tuple->name, name) == 0)
             return 1;
         tuple = tuple->next;
@@ -212,7 +209,7 @@ struct IdTable* addNestedScope(struct IdTable *currIdTable) {
 }
 
 //Passing the current table will just add a tuple to the table
-void addTupleEntry(struct IdTable *currIdTable, char *name, int line_dec, int line_ref, enum enum_token type, int arr_or_not, int start, int end) {
+void addTupleEntry(struct IdTable *currIdTable, TREENODEPTR currnode, char *name, int line_dec, int line_ref, enum enum_token type, int arr_or_not, int start, int end) {
     struct IdTuple *temp = (struct IdTuple*)malloc(sizeof(struct IdTuple));
     temp->line_dec = line_dec;
     temp->line_ref = line_ref;
@@ -223,6 +220,9 @@ void addTupleEntry(struct IdTable *currIdTable, char *name, int line_dec, int li
     temp->start = start;
     temp->end = end;
     temp->arr_or_not = arr_or_not;
+    
+    if (currnode)
+        currnode->tuple = temp;
 }
 
 void printIdTable(struct IdTable *curr) {
@@ -292,11 +292,11 @@ void makeTable(TREENODEPTR treeNode) {
                     pop_st(stack); //DataType pop_stped
                     pop_st(stack); //SEMICOLON pop_stped
 
-                    if (checkinTable(currIdTable, _idlist->child[0]->lexeme) == 1) {
+                    if (checkIdentifierifDeclared(currIdTable, _idlist->child[0], _idlist->child[0]->lexeme) == 1) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
                     }
-                    else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, _idlist->child[0]->lexeme) == 1) {
+                    else if (checkInParameters(currFuncTable, _idlist->child[0]->lexeme) == 1) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration of Parameters Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
 
@@ -306,17 +306,17 @@ void makeTable(TREENODEPTR treeNode) {
                         if (_dtype->child[0]->t == ARRAY) {
                             int start = _dtype->child[2]->child[0]->val.int_val;
                             int end = _dtype->child[2]->child[2]->val.int_val;
-                            addTupleEntry(currIdTable, _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
+                            addTupleEntry(currIdTable, _idlist->child[0], _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
                         }
                         else
-                            addTupleEntry(currIdTable, _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
+                            addTupleEntry(currIdTable, _idlist->child[0], _idlist->child[0]->lexeme, _idlist->child[0]->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
                     }
                     TREENODEPTR cur = _idlist->child[1];
                     while(cur->child[0]->t != e) {
 
                         TREENODEPTR n = cur->child[1];
 
-                        if (checkinTable(currIdTable, n->lexeme) == 1) {
+                        if (checkIdentifierifDeclared(currIdTable,n, n->lexeme) == 1) {
                             printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
                         else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme) == 1) {
@@ -326,10 +326,11 @@ void makeTable(TREENODEPTR treeNode) {
                             if (_dtype->child[0]->t == ARRAY) {
                                 int start = _dtype->child[2]->child[0]->val.int_val;
                                 int end = _dtype->child[2]->child[2]->val.int_val;
-                                addTupleEntry(currIdTable, n->lexeme, n->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
+                                addTupleEntry(currIdTable, n, n->lexeme, n->line_num, 0, _dtype->child[5]->child[0]->t, 1, start, end);
+                      
                             }
                             else
-                                addTupleEntry(currIdTable, n->lexeme, n->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
+                                addTupleEntry(currIdTable, n, n->lexeme, n->line_num, 0, _dtype->child[0]->t, 0, -1, -1);
                         }
                         cur = cur->child[2];
                     }
@@ -341,6 +342,24 @@ void makeTable(TREENODEPTR treeNode) {
                 if (currFuncTable->idTable == NULL) {//The current function has no scope yet
                     currFuncTable->idTable = getNewTable();
                     currIdTable = currFuncTable->idTable; //change the scope
+                    struct Parameters *in = currFuncTable->in;
+                    struct Parameters *out = currFuncTable->out;
+                    while(in){
+                        if (in->type == ARRAY) {
+                            addTupleEntry(currIdTable, NULL, in->name, in->line_num, 0, in->type, 1, in->start, in->end);
+                        }
+                        else
+                            addTupleEntry(currIdTable, NULL, in->name, in->line_num, 0, in->type, 0, -1, -1);
+                        in = in->next;
+                    }
+                    while(out){
+                        if (out->type == ARRAY) {
+                            addTupleEntry(currIdTable, NULL, out->name, out->line_num, 0, out->type, 1, out->start, out->end);
+                        }
+                        else
+                            addTupleEntry(currIdTable, NULL, out->name, out->line_num, 0, out->type, 0, -1, -1);
+                        out = out->next;
+                    }
                 }
 
                 else {
@@ -372,6 +391,7 @@ void makeTable(TREENODEPTR treeNode) {
                     else {
                         in->type = _dtype->child[0]->t;
                     }
+                    in->line_num = temp->line_num;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
@@ -390,6 +410,7 @@ void makeTable(TREENODEPTR treeNode) {
                             else {
                                 in->next->type = _dtype->child[0]->t;
                             }
+                            in->next->line_num = n->line_num;
                             in = in->next;
                         }
                         cur = cur->child[4];
@@ -415,6 +436,7 @@ void makeTable(TREENODEPTR treeNode) {
                     else {
                         out->type = _dtype->child[0]->t;
                     }
+                    out->line_num = temp->line_num;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
@@ -434,6 +456,7 @@ void makeTable(TREENODEPTR treeNode) {
                             else {
                                 out->next->type = _dtype->child[0]->t;
                             }
+                            out->next->line_num = n->line_num;
 
                             out = out->next;
                         }
@@ -443,7 +466,7 @@ void makeTable(TREENODEPTR treeNode) {
                 }
 
                 else {
-                    if (checkIdentifierifDeclared(currIdTable, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == 0) {
+                    if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == 0) {
                         printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
                     }
                 }
@@ -489,4 +512,8 @@ void makeTable(TREENODEPTR treeNode) {
             }
         }
     }
+}
+
+struct FuncTable* getFuncList() {
+    return funcList;
 }
