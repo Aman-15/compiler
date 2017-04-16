@@ -31,4 +31,6 @@ void addTupleEntry(struct IdTable *currIdTable, TREENODEPTR currnode, char *name
 void makeTable(TREENODEPTR treeNode);
 struct FuncTable* getFuncList();
 
+void printSymbolTable();
+
 #endif

@@ -94,7 +94,6 @@ void appendSymbol(int id) {
 void addKeyword(int id, char *keyword) {
     struct token *curr = (struct token*)malloc(sizeof(struct token));
 
-    int i=0;
     strcpy(curr->lexeme, keyword);
     curr->tokenID = id;
     curr->next = NULL;
@@ -167,7 +166,7 @@ void matchSymbols(char *buf) {
             int i=0;
             id[i++] = front;
             index++;
-            while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || (buf[index]>='0' && buf[index]<='9') && buf[index]!='\n')
+            while ((buf[index]>='A' && buf[index]<='Z') || (buf[index]>='a' && buf[index]<='z') || buf[index]=='_' || ((buf[index]>='0' && buf[index]<='9') && buf[index]!='\n'))
                 id[i++] = buf[index++];
             
             id[i] = '\0';

@@ -57,8 +57,9 @@ int main(int argc, char *argv[])
 			// printf("%s\n", string_tokens1[root->t + count_terminal]);
 			makeTable(root);
 			printf("Symbol Table generated\n");
-			ast_root = generateAST(root);
-			printf("AST generated\n");
+			printSymbolTable();
+			// ast_root = generateAST(root);
+			// printf("AST generated\n");
 			
 			break;
 	}

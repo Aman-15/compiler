@@ -1,9 +1,28 @@
 /** Incomplete
-1. Rule 32
-
+2. Type checking with arrays. Eg, arr[i] + arr;
+3. Rule 67, error handling
+4. Switch case error check handling.
 **/
 
-#include "AST.h"
+#include "AST.h" 
+
+char *string_tokens2[] = {
+    "DECLARE\0", "DRIVER\0", "PROGRAM\0", "FOR\0", "START\0", "END\0", "MODULE\0", "GET_VALUE\0", "PRINT\0", 
+    "USE\0", "WITH\0", "PARAMETERS\0", "TRUE\0", "FALSE\0", "TAKES\0", "INPUT\0", "RETURNS\0", "AND\0", "OR\0", 
+    "SWITCH\0", "CASE\0", "BREAK\0", "DEFAULT\0", "WHILE\0", "INTEGER\0", "REAL\0", "BOOLEAN\0", "OF\0", "ARRAY\0", 
+    "IN\0", "ID\0", "RNUM\0", "NUM\0", "COLON\0", "ASSIGNOP\0", "COMMA\0", "NE\0", "RANGEOP\0", "GT\0", "ENDDEF\0", 
+    "GE\0", "SEMICOL\0", "EQ\0", "MINUS\0", "LT\0", "DEF\0", "LE\0", "PLUS\0", "MUL\0", "COMMENTMARK\0", "DIV\0", 
+    "SQBO\0", "SQBC\0", "BO\0", "BC\0", "DRIVERDEF\0", "DRIVERENDDEF\0", "$\0", "e\0", "program\0", 
+    "moduleDeclarations\0", "otherModules\0", "driverModule\0", "moduleDeclaration\0", "module\0", "moduleDef\0", 
+    "input_plist\0", "ret\0", "output_plist\0", "dataType\0", "input_plist2\0", "type\0", "output_plist2\0", 
+    "range\0", "statements\0", "statement\0", "ioStmt\0", "simpleStmt\0", "declareStmt\0", "conditionalStmt\0", 
+    "iterativeStmt\0", "var\0", "whichId\0", "assignmentStmt\0", "moduleReuseStmt\0", "whichStmt\0", "lvalueIDStmt\0", 
+    "lvalueARRStmt\0", "expression\0", "index1\0", "optional\0", "idList\0", "idList2\0", "arithmeticOrBooleanExpr\0", 
+    "arithmeticExpr\0", "anyTerm\0", "arithmeticOrBooleanExpr2\0", "logicalOp\0", "anyTerm2\0", "relationalOp\0", 
+    "term\0", "arithmeticExpr2\0", "op1\0", "factor\0", "term2\0", "op2\0", "caseStmts\0", "default1\0", "value\0", 
+    "booleanOrNonBooleanArithmeticExpr\0", "expressionWithLogOp\0", "expressionWithRelOp\0", "negOrPosArithmeticExpr\0", 
+    "caseStmt\0"
+};
 
 int max_child = 10;
 
@@ -153,7 +172,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case ioStmt: //Rule 32
 				if (root->child[0]->t == GET_VALUE) {
 					//Return with scope
-
+					addIdChild(ast, root->child[2]->tuple);
 				}
 				else { //Rule 33
 					free(ast);
@@ -196,7 +215,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					break;
 
 					default:
-						printf("This is dfault of nested switch\n");
+						printf("This is default of nested switch\n");
 					break;
 				}
 			break;
@@ -225,11 +244,12 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				//printf("Line num before seg fault: %d\n", root->line_num);
 				
 				addIdChild(ast, root->child[0]->tuple);
-				addAstChild(ast, generateAST(root->child[1]));
 				if(root->child[0]->tuple && ws->type != root->child[0]->tuple->type){
-					printf("line:%d Type mismatch while assigning\n", root->child[0]->line_num);
-						return NULL;
+					if (ws->type != 0)
+						printf("line:%d Type mismatch while assigning '%s' and '%s'\n", root->child[0]->line_num, string_tokens2[ws->type], string_tokens2[root->child[0]->tuple->type]);
+					return NULL;
 				}
+				addAstChild(ast, generateAST(root->child[1]));
 			break;
 
 			case whichStmt:		//Rule 44, Rule 45
@@ -268,9 +288,71 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			break;
 
 			case moduleReuseStmt:	//Rule 50
+				;struct FuncTable* func = findInFunctionList(root->child[3]->lexeme);
 				addAstChild(ast, generateAST(root->child[0]));
-				addFuncChild(ast, findInFunctionList(root->child[3]->lexeme));
+				addFuncChild(ast, func);
 				addAstChild(ast, generateAST(root->child[6]));
+				;struct Parameters *in = func->in;
+				;struct Parameters *out = func->out;
+				
+				;struct ASTNode *in_list = ast->child[2].astNode;
+				;struct ASTNode *out_list = ast->child[0].astNode;
+
+				if(func->status == declared) {
+					printf("Line: %d Error: Used function is never defined\n", root->child[1]->line_num);
+				}
+
+				//checking type of input_plist
+				// printf("%s\n", in->name);
+				// printf("%s\n", in_list->child[0].tupleEntry->name);
+				if(in && in_list) {
+					if(in_list->child[0].tupleEntry && in->type != in_list->child[0].tupleEntry->type){
+						printf("1 Line: %d Error in input Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[in->type], string_tokens2[in_list->child[0].tupleEntry->type]);
+					}
+					in = in->next;
+					in_list = in_list->child[1].astNode;
+					while(in && in_list){
+						// printf("%s\n", in->name);
+						// printf("%s\n", in_list->child[0].tupleEntry->name);
+						if(in_list->child[0].tupleEntry && in->type != in_list->child[0].tupleEntry->type){
+
+							printf("2 Line: %d Error in input Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[in->type], string_tokens2[in_list->child[0].tupleEntry->type]);
+						}
+						in = in->next;
+						in_list = in_list->child[1].astNode;
+					}
+				}
+				if(in){
+					printf("Line: %d More input Parameters Expected\n", root->child[1]->line_num);
+				}
+				if(in_list){
+					printf("Line: %d More input Parameters supplied\n", root->child[1]->line_num);
+				}
+
+				//Checking type of output_plist
+				if(out && out_list){
+					if(out_list->child[0].tupleEntry && out->type != out_list->child[0].tupleEntry->type){
+						printf("1 Line: %d Error in output Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[out->type], string_tokens2[out_list->child[0].tupleEntry->type]);
+					}
+					out = out->next;
+					out_list = out_list->child[1].astNode;
+					while(out && out_list){
+						// printf("%s\n", in->name);
+						// printf("%s\n", in_list->child[0].tupleEntry->name);
+						if(out_list->child[0].tupleEntry && out->type != out_list->child[0].tupleEntry->type){
+
+							printf("2 Line: %d Error in output Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[out->type], string_tokens2[out_list->child[0].tupleEntry->type]);
+						}
+						out = out->next;
+						out_list = out_list->child[1].astNode;
+					}
+				}
+				if(out){
+					printf("Line: %d More output Parameters Expected\n", root->child[1]->line_num);
+				}
+				if(out_list){
+					printf("Line: %d More output Parameters supplied\n", root->child[1]->line_num);
+				}
 			break;
 
 			case optional:	//Rule 51, 52
@@ -326,8 +408,12 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					struct ASTNode *at = generateAST(root->child[0]);
 					struct ASTNode *ewlo = generateAST(root->child[1]);
 
-					if (ewlo != NULL)
+					if (ewlo != NULL) {
+						if (at->type != BOOLEAN) {
+							printf("line:%d Expected a BOOLEAN expression\n", root->child[1]->child[0]->child[0]->line_num);
+						}
 						ast->type = BOOLEAN;
+					}
 					else
 						ast->type = at->type;
 
@@ -356,13 +442,15 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case expressionWithLogOp:	//Rule 67
 				if (root->child[0]->t != e) {
 					struct ASTNode *at2 = generateAST(root->child[1]);
-					if (at2->type != BOOLEAN) {
-						printf("line:%d Cannot be a non-boolean expression\n", root->child[1]->child[0]->line_num);
-						return NULL;
+					struct ASTNode *ewlp2 = generateAST(root->child[2]);
+
+					if (at2->type != BOOLEAN) {	
+						printf("line:%d Cannot be a non-boolean expression\n", root->child[0]->child[0]->line_num);
+						at2->type = BOOLEAN;
 					}
 					addAstChild(ast, generateAST(root->child[0]));
 					addAstChild(ast, at2);
-					addAstChild(ast, generateAST(root->child[2]));
+					addAstChild(ast, ewlp2);
 				}
 				else {	//Rule 68
 					free(ast);
@@ -375,7 +463,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				;struct ASTNode *ae = generateAST(root->child[0]);
 				if (ewro != NULL)
 					ast->type = BOOLEAN;
-				else
+				else if (ae)
 					ast->type = ae->type;
 				addAstChild(ast, ae);
 				addAstChild(ast, ewro);
@@ -393,13 +481,14 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case expressionWithRelOp:	//Rule 72
 				if (root->child[0]->t != e) {
 					struct ASTNode *nopae = generateAST(root->child[1]);
-					if (nopae->type != BOOLEAN) {
-						printf("line:%d Cannot be a non-boolean expression\n", root->line_num);
-						return NULL;
-					}
 					addAstChild(ast, generateAST(root->child[0]));
 					addAstChild(ast, nopae);
 					addAstChild(ast, generateAST(root->child[2]));
+					// printf("%d\n", nopae->type - INTEGER);
+					if (nopae->type != REAL && nopae->type != INTEGER) {
+						printf("line:%d Expression must be either INTEGER or REAL\n", root->child[0]->child[0]->line_num);
+						return NULL;
+					}
 				}
 				else {	//Rule 73
 					free(ast);
@@ -425,16 +514,42 @@ struct ASTNode *generateAST(TREENODEPTR root){
 
 			case arithmeticExpr:	//Rule 76
 				;struct ASTNode *trm = generateAST(root->child[0]);
-				ast->type = trm->type;
+				;struct ASTNode *ae2 = generateAST(root->child[1]);
+				if (ae2 && ae2->type != trm->type) {
+					if (ae2->type && trm->type)
+						printf("line:%d Type mismatch in expression '%s' and '%s'\n", root->child[1]->child[0]->child[0]->line_num,
+							string_tokens2[trm->type], string_tokens2[ae2->type]);
+					free(ast);
+					return NULL;
+				}
+
 				addAstChild(ast, trm);
-				addAstChild(ast, generateAST(root->child[1]));
+				addAstChild(ast, ae2);
+
+				if (trm->type == BOOLEAN && ae2) {
+					printf("line:%d Cannot be a boolean expression\n", root->child[0]->child[0]->child[0]->child[0]->line_num);
+					ast->type = 0;
+				}
+				else
+					ast->type = trm->type;
 			break;
 
 			case arithmeticExpr2:
 				if (root->child[0]->t != e) {	//Rule 77
 					addAstChild(ast, generateAST(root->child[0]));
-					addAstChild(ast, generateAST(root->child[1]));
-					addAstChild(ast, generateAST(root->child[2]));
+					;struct ASTNode *trm2 = generateAST(root->child[1]);
+					;struct ASTNode *ae22 = generateAST(root->child[2]);
+
+					if (ae22 && trm2 && ae22->type != trm2->type) {
+						if (ae22->type && trm2->type)
+							printf("line:%d Type mismatch in expression '%s' and '%s'\n", root->child[0]->child[0]->line_num,
+								string_tokens2[trm2->type], string_tokens2[ae22->type]);
+						free(ast);
+						return NULL;
+					}
+					addAstChild(ast, trm2);
+					addAstChild(ast, ae22);
+					ast->type = trm2->type;
 				}
 				else {	//Rule 78
 					free(ast);
@@ -491,8 +606,19 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			break;
 
 			case conditionalStmt:	//Rule 96
-				addAstChild(ast, generateAST(root->child[5]));
-				addAstChild(ast, generateAST(root->child[6]));
+				;struct ASTNode *cstmts = generateAST(root->child[5]);
+				;struct ASTNode *dflt = generateAST(root->child[6]);
+				if (root->child[2]->tuple->type == REAL) {
+					printf("line:%d Switch condition must be a INTEGER or BOOLEAN\n", root->child[0]->line_num);
+				}
+				else if (root->child[2]->tuple->type == INTEGER && dflt == NULL) {
+					printf("line:%d Switch must have a \"default\" case\n", root->child[0]->line_num);
+				}
+				else if (root->child[2]->tuple->type == BOOLEAN && dflt != NULL) {
+					printf("line:%d Switch must not have a \"default\" case\n", root->child[0]->line_num);
+				}
+				addAstChild(ast, cstmts);
+				addAstChild(ast, dflt);
 			break;
 
 			case caseStmts:		//Rule 97
@@ -518,9 +644,12 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					ast->type = INTEGER;
 					ast->val.int_val = root->child[0]->val.int_val;
 				}
-				else {	//Rule 101, 102
+				else if (root->child[0]->t == TRUE || root->child[0]->t == FALSE) {	//Rule 101, 102
 					ast->type = BOOLEAN;
 					ast->val.bool = root->child[0]->t;
+				}
+				else {
+					printf("line:%d Case value must be a BOOLEAN or INTEGER\n", root->child[0]->line_num);
 				}
 			break;
 
@@ -537,7 +666,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					struct ASTNode *aobe2 = generateAST(root->child[2]);
 					if (aobe2->type != BOOLEAN) {
 						printf("line:%d While condition must be a boolean expression\n", root->child[0]->line_num);
-						return NULL;
+						aobe2->type = BOOLEAN;
 					}
 					addAstChild(ast, aobe2);
 					addAstChild(ast, generateAST(root->child[5]));

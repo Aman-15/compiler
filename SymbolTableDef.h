@@ -25,7 +25,8 @@ struct IdTuple {
 };
 
 struct IdTable {
-    int scopeId;
+    int nesting;
+    int beg, last;
     int count;
     struct IdTable *child, *next, *parent;
     struct IdTuple *idTuple;
