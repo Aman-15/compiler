@@ -47,8 +47,7 @@ void push(LISTPTR stack, enum enum_token t, int t_or_nt)
 	stack->count++;
 }
 
-void pop(LISTPTR stack)
-{
+void pop(LISTPTR stack) {
 	if(stack == NULL || stack->first == NULL)
 	{
 		printf("STACK IS EMPTY!! EXITING\n");
@@ -300,7 +299,6 @@ void inputGrammar(char *gramFile) {
 }
 
 int *parseInputSourceCode(struct token* tokens) {
-	//printf("%d\n", follow[otherModules]->count);
 	int *rules = (int *)malloc(10000*sizeof(int));
 	int i = 0; 
 	for(i = 0; i < 10000; i++) rules[i] = -1;
@@ -310,18 +308,14 @@ int *parseInputSourceCode(struct token* tokens) {
 	stack->first = NULL;
 	struct token *tk = tokens;
 	while(tk && tk->tokenID == COMMENTMARK) {
-		// printf("Skipping comments\n");
 		tk = tk->next;
 	}
 	push(stack, $, 1);
 	push(stack, program, 0);
 	NODEPTR X = top(stack);
+	int flag = 0;
 	while(X->t != $)
 	{
-		// if(X->t_or_nt == 1)
-		// 	printf("%s\n", string_tokens[X->t]);
-		// else printf("%s\n", string_tokens[X->t + count_terminal]);
-
 		if(X->t_or_nt == 1)
 		{
 			if(X->t == e)
@@ -330,21 +324,24 @@ int *parseInputSourceCode(struct token* tokens) {
 			{
 				pop(stack);
 				tk = tk->next;
-				// if (tk)
-				// 	printf("%s\n", string_tokens[tk->tokenID]);
 				while(tk && tk->tokenID == COMMENTMARK) 
 					tk = tk->next;
 			}
 			else {
-				printf("line:%d The token %s for lexeme %s does not match. The expected token here is %s\n", tk->line_num, string_tokens[tk->tokenID],
+				printf("line:%d The token \"%s\" for lexeme \"%s\" does not match. The expected token here is \"%s\"\n", tk->line_num, string_tokens[tk->tokenID],
 					tk->lexeme, string_tokens[X->t]);
-				break; 
+				flag = 1;
+
+				while (tk && tk->tokenID != SEMICOL)
+					tk = tk->next;
+				while (tk && parseTable[X->t][tk->tokenID] == -1) {
+					pop(stack);
+					X = top(stack);
+				}
 			}
 		}
 		else
 		{
-			//printf("%s\n", string_tokens[X->t + count_terminal]);
-			//printf("%s\n", string_tokens[tk->tokenID]);
 			if(tk == NULL && stack->count > 1)
 			{
 				while(parseTable[top(stack)->t][$] != -1)
@@ -357,21 +354,27 @@ int *parseInputSourceCode(struct token* tokens) {
 				}
 				if(stack->count > 1) {
 					printf("Stack not empty\n");
+					//return NULL;
 					break;
 				}
 
 			}
 			else if(parseTable[X->t][tk->tokenID] == -1) {
-				printf("line:%d Token mismatch ", tk->line_num);
-				printf("%s ", string_tokens[X->t + count_terminal]);
-				printf("%s\n", string_tokens[tk->tokenID]);
-				break; //ERROR HANDLING
+				printf("line:%d Unexpected Token ", tk->line_num);
+				printf("\"%s\"\n", tk->lexeme);
+				flag = 1;
+				
+				while (tk && tk->tokenID != SEMICOL)
+					tk = tk->next;
+				while (tk && parseTable[X->t][tk->tokenID] == -1) {
+					pop(stack);
+					X = top(stack);
+				}
 			}
 			else
 			{
 				int r = parseTable[X->t][tk->tokenID];
 				rules[index++] = r; //add rule number for generation of parse tree
-				//printf("%d\n", r);
 				pop(stack);
 				NODEPTR rhs = grammar[r]->first->next;
 				LISTPTR dummy_stack = (LISTPTR)malloc(sizeof(struct linkedlist));
@@ -379,55 +382,58 @@ int *parseInputSourceCode(struct token* tokens) {
 				dummy_stack->first = NULL;
 				while(rhs != NULL)
 				{
-					 push(dummy_stack, rhs->t, rhs->t_or_nt);
+					push(dummy_stack, rhs->t, rhs->t_or_nt);
 					rhs = rhs->next;
 				}
 				while(dummy_stack->count > 0)
 				{
 					push(stack, top(dummy_stack)->t, top(dummy_stack)->t_or_nt);
 					pop(dummy_stack);
-					//printf("dummy=%d\n", dummy_stack->count);
 				}	
 			}
-			// printf("count = %d\n", stack->count);
 		}
 		X = top(stack);
 
 	}
-	if(tk != NULL) // error
-		printf("Error tk exceeding\n");
-	else
+	if(flag == 0 && tk != NULL) {// error
+		printf("Error: token list exceeding\n");
+		//return NULL;
+	}
+	else if (flag == 0) {
 		printf("String Parsed Successfully\n");
+	}
+	else if (flag == 1)
+		return NULL;
 	return rules;
 }
 
-void printTreeInorder(FILE *fp, TREENODEPTR tree) {
+void printTreeInorder(TREENODEPTR tree) {
 	if (tree != NULL) {
 		if (tree->child_count > 0)
-			printTreeInorder(fp,tree->child[0]);
+			printTreeInorder(tree->child[0]);
 		
 		if(tree->t_or_nt == 1) {
 			if (tree->t == e)
-				fprintf(fp,"---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
+				printf("---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
 			else {
 				if (tree->t == NUM)
-					fprintf(fp,"%s %d %s %d %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+					printf("%s %d %s %d %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
 						tree->val.int_val, string_tokens[tree->parent->t + count_terminal]);
 				else if (tree->t == RNUM)
-					fprintf(fp,"%s %d %s %f %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+					printf("%s %d %s %f %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
 						tree->val.float_val, string_tokens[tree->parent->t + count_terminal]);
 				else
-					fprintf(fp,"%s %d %s ---- %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+					printf("%s %d %s ---- %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
 						string_tokens[tree->parent->t + count_terminal]);
 			}
 		}
 		else
-			fprintf(fp,"---- ---- ---- ---- %s no %s\n", tree->parent == NULL ? "ROOT\0" : string_tokens[tree->parent->t + count_terminal], 
+			printf("---- ---- ---- ---- %s no %s\n", tree->parent == NULL ? "ROOT\0" : string_tokens[tree->parent->t + count_terminal], 
 				string_tokens[tree->t + count_terminal]);
 		
 		int i;
 		for(i=1; i<tree->child_count; i++)
-			printTreeInorder(fp,tree->child[i]);
+			printTreeInorder(tree->child[i]);
 	}
 }
 

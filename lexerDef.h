@@ -10,8 +10,7 @@ MANIK BHANDARI 2014A7PS088P
 #include <string.h>
 //#include "parserDef.h"
 
-#define BUFFER_SIZE 100
-
+#define BUFFER_SIZE 1000
 
 enum enum_token {
     DECLARE, DRIVER, PROGRAM, FOR, START, END, MODULE, GET_VALUE, PRINT, USE, WITH, PARAMETERS, TRUE, FALSE,

@@ -7,3 +7,5 @@ void addIdChild(struct ASTNode *parent, struct IdTuple *child);
 void addFuncChild(struct ASTNode *parent, struct FuncTable *child);
 void addParaChild(struct ASTNode *parent, struct Parameters *param);
 struct ASTNode *generateAST(TREENODEPTR root);
+
+void printAST();

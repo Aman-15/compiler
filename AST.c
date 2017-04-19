@@ -24,11 +24,19 @@ char *string_tokens2[] = {
     "caseStmt\0"
 };
 
-int max_child = 10;
+int max_child = 5;
 
 struct ASTNode *createASTNode(){
 	struct ASTNode *newnode = (struct ASTNode *)malloc(sizeof(struct ASTNode));
-	newnode->child = (union NodeType *)malloc(max_child * sizeof(union NodeType));
+	newnode->child = (struct NodeType *)malloc(max_child * sizeof(struct NodeType));
+	int i=0;
+	while (i < max_child) {
+		newnode->child[i].funcEntry = NULL;
+		newnode->child[i].paraEntry = NULL;
+		newnode->child[i].astNode = NULL;
+		newnode->child[i].tupleEntry = NULL;
+		i++;
+	}
 	newnode->parent = NULL;
 	newnode->child_count = 0;
 	return newnode;
@@ -40,18 +48,22 @@ void addAstChild(struct ASTNode *parent, struct ASTNode *child){
 		child->parent = parent;
 	parent->child_count++;
 }
+
 void addIdChild(struct ASTNode *parent, struct IdTuple *child){
 	parent->child[parent->child_count].tupleEntry = child;
 	parent->child_count++;
 }
+
 void addFuncChild(struct ASTNode *parent, struct FuncTable *child){
 	parent->child[parent->child_count].funcEntry = child;
 	parent->child_count++;
 }
+
 void addParaChild(struct ASTNode *parent, struct Parameters *param){
 	parent->child[parent->child_count].paraEntry = param;
 	parent->child_count++;
 }
+
 struct ASTNode *generateAST(TREENODEPTR root){
 	struct ASTNode *ast = createASTNode();
 	if(root->t_or_nt == 0){
@@ -247,6 +259,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				if(root->child[0]->tuple && ws->type != root->child[0]->tuple->type){
 					if (ws->type != 0)
 						printf("line:%d Type mismatch while assigning '%s' and '%s'\n", root->child[0]->line_num, string_tokens2[ws->type], string_tokens2[root->child[0]->tuple->type]);
+					free(ast);
 					return NULL;
 				}
 				addAstChild(ast, generateAST(root->child[1]));
@@ -385,6 +398,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					struct ASTNode *bonbe = generateAST(root->child[1]);
 					if (bonbe->type == BOOLEAN) {
 						printf("line:%d Cannot be a boolean expression after MINUS\n", root->child[0]->line_num);
+						free(ast);
 						return NULL;
 					}
 					else
@@ -487,6 +501,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					// printf("%d\n", nopae->type - INTEGER);
 					if (nopae->type != REAL && nopae->type != INTEGER) {
 						printf("line:%d Expression must be either INTEGER or REAL\n", root->child[0]->child[0]->line_num);
+						free(ast);
 						return NULL;
 					}
 				}
@@ -501,6 +516,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					struct ASTNode *bonbe1 = generateAST(root->child[1]);
 					if (bonbe1->type == BOOLEAN) {
 						printf("line:%d Cannot be a boolean expression after MINUS\n", root->child[0]->line_num);
+						free(ast);
 						return NULL;
 					}
 					else
@@ -698,4 +714,31 @@ struct ASTNode *generateAST(TREENODEPTR root){
 	}
 	printf("Outside switch case\n");
 	return NULL;
+}
+
+void printAST(struct ASTNode *root) {
+	printf("%s\n",string_tokens2[count_terminal + root->tokenID]);
+
+	if (root->child) {
+		if (root->child[0].astNode)
+			printAST(root->child[0].astNode);
+		else if (root->child[0].funcEntry)
+			printf("%s\n", root->child[0].funcEntry->name);
+		else if (root->child[0].tupleEntry)
+			printf("%s\n", root->child[0].tupleEntry->name);
+		else if (root->child[0].tupleEntry)
+			printf("%s\n", root->child[0].paraEntry->name);
+	}
+
+	int i;
+	for (i=1; i<root->child_count; i++) {
+		if (root->child[i].astNode)
+			printAST(root->child[i].astNode);
+		else if (root->child[i].funcEntry)
+			printf("%s\n", root->child[i].funcEntry->name);
+		else if (root->child[i].tupleEntry)
+			printf("%s\n", root->child[i].tupleEntry->name);
+		else if (root->child[i].tupleEntry)
+			printf("%s\n", root->child[i].paraEntry->name);
+	}
 }

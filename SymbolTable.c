@@ -2,9 +2,9 @@
 1. Data Type for arrays...done.
 2. error handling...Done at the symbol table level.
 3. checking id in function parameter...done.
-4. CHeck if used module is ever defined...during ast.
-5. Iterative and switch statements, iterator can't be declared.
-6. Testcase4_new - Switch-Case "index" not found.
+4. CHeck if used module is ever defined...during ast...not done.
+5. Iterative and switch statements, iterator can't be declared....not done.
+6. Testcase4_new - Switch-Case "index" not found....not done.
 7. Redifinition of index int interative statements not done.
 */
 
@@ -32,6 +32,8 @@ char *string_tokens1[] = {
     "booleanOrNonBooleanArithmeticExpr\0", "expressionWithLogOp\0", "expressionWithRelOp\0", "negOrPosArithmeticExpr\0", 
     "caseStmt\0"
 };
+
+int offset;
 
 /********* Stack Implementation ************/
 
@@ -67,6 +69,42 @@ int isEmpty(struct tnll *stack) {
     return stack->count == 0 ? 1 : 0;
 }
 //End of Stack
+
+int getWidthTuple(struct IdTuple *tuple) {
+    int width;
+    switch (tuple->type) {
+        case BOOLEAN : width = 1;
+            break;
+        case REAL : width = 4;
+            break;
+        case INTEGER : width = 2;
+            break;
+        default:
+            break;
+    }
+    if (tuple->arr_or_not == 0)
+        return width;
+    else
+        return tuple->end * width;
+}
+
+int getWidthParameters(struct Parameters *param) {
+    int width;
+    switch (param->type) {
+        case BOOLEAN : width = 1;
+            break;
+        case REAL : width = 4;
+            break;
+        case INTEGER : width = 2;
+            break;
+        default:
+            break;
+    }
+    if (param->arr_or_not == 0)
+        return width;
+    else
+        return param->end * width;
+}
 
 struct FuncTable* findInFunctionList(char *name) {
     struct FuncTable *f = funcList;
@@ -182,6 +220,7 @@ struct IdTable* getNewTable() {
     temp->next = NULL;
     temp->parent = NULL;
     temp->idTuple = NULL;
+    temp->idTupleLast = NULL;
     return temp;
 }
 
@@ -213,11 +252,21 @@ void addTupleEntry(struct IdTable *currIdTable, TREENODEPTR currnode, char *name
     temp->line_ref = line_ref;
     temp->type = type;
     strcpy(temp->name, name);
-    temp->next = currIdTable->idTuple;
-    currIdTable->idTuple = temp;
     temp->start = start;
     temp->end = end;
     temp->arr_or_not = arr_or_not;
+    temp->offset = offset;
+    temp->width = getWidthTuple(temp);
+    offset += getWidthTuple(temp);
+    temp->next = NULL;
+
+    if (currIdTable->idTuple == NULL) {
+        currIdTable->idTuple = currIdTable->idTupleLast = temp;
+    }
+    else {
+        currIdTable->idTupleLast->next = temp;
+        currIdTable->idTupleLast = temp;
+    }
     
     if (currnode)
         currnode->tuple = temp;
@@ -240,7 +289,6 @@ void makeTable(TREENODEPTR treeNode) {
         TREENODEPTR temp = top_st(stack);
         
         if (temp->t_or_nt == 0) {   //If it is a non-terminal, then push_st all the children
-            // printf("%d %s\n", stack->count, string_tokens1[top_st(stack)->t + count_terminal]);
             pop_st(stack);
             
             int i = temp->child_count;
@@ -250,10 +298,8 @@ void makeTable(TREENODEPTR treeNode) {
         }
 
         else {                      //If it is a terminal, then pop_st and just process it
-            // printf("%d %s\n", stack->count, string_tokens1[top_st(stack)->t]);
             pop_st(stack);
 
-            //Starting with DECLARE
             if (temp->t == DECLARE) {
                 
                 if (top_st(stack)->t == MODULE) { //Eg.1 declare module compute;
@@ -334,24 +380,6 @@ void makeTable(TREENODEPTR treeNode) {
                     currIdTable = currFuncTable->idTable; //change the scope
                     currIdTable->nesting = 1;
                     currIdTable->beg = temp->line_num;
-                    struct Parameters *in = currFuncTable->in;
-                    struct Parameters *out = currFuncTable->out;
-                    while(in){
-                        if (in->type == ARRAY) {
-                            addTupleEntry(currIdTable, NULL, in->name, in->line_num, 0, in->type, 1, in->start, in->end);
-                        }
-                        else
-                            addTupleEntry(currIdTable, NULL, in->name, in->line_num, 0, in->type, 0, -1, -1);
-                        in = in->next;
-                    }
-                    while(out){
-                        if (out->type == ARRAY) {
-                            addTupleEntry(currIdTable, NULL, out->name, out->line_num, 0, out->type, 1, out->start, out->end);
-                        }
-                        else
-                            addTupleEntry(currIdTable, NULL, out->name, out->line_num, 0, out->type, 0, -1, -1);
-                        out = out->next;
-                    }
                 }
 
                 else {
@@ -379,7 +407,6 @@ void makeTable(TREENODEPTR treeNode) {
                     struct Parameters *in = in_start;
                     strcpy(in->name, temp->lexeme);
                     if (_dtype->child[0]->t == ARRAY) {
-                        printf("%s\n", in->name);
                         in->start = _dtype->child[2]->child[0]->val.int_val;
                         in->end = _dtype->child[2]->child[2]->val.int_val;
                         in->type = _dtype->child[5]->child[0]->t;
@@ -389,13 +416,17 @@ void makeTable(TREENODEPTR treeNode) {
                         in->type = _dtype->child[0]->t;
                         in->arr_or_not = 0;
                     }
+                    in->offset = offset;
+                    in->width = getWidthParameters(in);
+                    offset += getWidthParameters(in);
                     in->line_num = temp->line_num;
+                    currFuncTable->in = in_start;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkinTable(currIdTable, n->lexeme) == 1) {
-                        printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
+                        if (checkInParameters(currFuncTable, n->lexeme) == 1) {
+                            printf("line:%d \"%s\" Already in the input parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
                             in->next = (struct Parameters *)malloc(sizeof(struct Parameters));
@@ -412,11 +443,14 @@ void makeTable(TREENODEPTR treeNode) {
                                 in->next->arr_or_not = 0;
                             }
                             in->next->line_num = n->line_num;
+                            in->next->offset = offset;
+                            in->next->width = getWidthParameters(in->next);
+                            offset += getWidthParameters(in->next);
                             in = in->next;
                         }
                         cur = cur->child[4];
+                        currFuncTable->in = in_start;
                     }
-                    currFuncTable->in = in_start;
                 }
 
                 else if (temp->parent->t == output_plist) {
@@ -440,12 +474,16 @@ void makeTable(TREENODEPTR treeNode) {
                         out->arr_or_not = 0;
                     }
                     out->line_num = temp->line_num;
+                    out->offset = offset;
+                    out->width = getWidthParameters(out);
+                    offset += getWidthParameters(out);
+                    currFuncTable->out = out_start;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkinTable(currIdTable, n->lexeme) == 1) {
-                        printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
+                        if (checkInParameters(currFuncTable, n->lexeme) == 1) {
+                        printf("line:%d \"%s\" Already in the output parame\n", n->line_num, n->lexeme);
                         }
                         else {
                             
@@ -462,12 +500,14 @@ void makeTable(TREENODEPTR treeNode) {
                                 out->next->arr_or_not = 0;
                             }
                             out->next->line_num = n->line_num;
-
+                            out->next->offset = offset;
+                            out->next->width = getWidthParameters(out->next);
+                            offset += getWidthParameters(out->next);
                             out = out->next;
                         }
                         cur = cur->child[4];
+                        currFuncTable->out = out_start;
                     }
-                    currFuncTable->out = out_start;
                 }
 
                 else {
@@ -475,6 +515,7 @@ void makeTable(TREENODEPTR treeNode) {
                         printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
                     }
                 }
+
             }
             else if(temp->t == USE) {
                 pop_st(stack); //module pop_stped
@@ -490,12 +531,14 @@ void makeTable(TREENODEPTR treeNode) {
                 }
                 //Handle if module is never defined.. to be done after 
             }
+
             else if(temp->t == DEF){
                 pop_st(stack); //module pop_stped
                 TREENODEPTR n = top_st(stack); //function id stored
                 pop_st(stack); //function id pop_stped
 
                 struct FuncTable *f = findInFunctionList(n->lexeme);
+                offset = 0;
                 if(f){
                     if(f->status == defined){
                         printf("line:%d module \"%s\" already defined\n", n->line_num, n->lexeme);
@@ -516,6 +559,7 @@ void makeTable(TREENODEPTR treeNode) {
 
             else if(temp->t == DRIVERDEF) {
                 currFuncTable = addFunc(currFuncTable);
+                offset = 0;
                 strcpy(currFuncTable->name, "driver");
                 currFuncTable->status = defined;
             }
@@ -527,66 +571,38 @@ struct FuncTable* getFuncList() {
     return funcList;
 }
 
-void printRowParam(struct FuncTable *currFunc, struct Parameters *param, int *offset, int *sno) {
-    int width;
-    switch (param->type) {
-        case BOOLEAN : width = 1;
-            break;
-        case REAL : width = 4;
-            break;
-        case INTEGER : width = 2;
-        default : ;
-    }
-    if (param->arr_or_not == 0) {    
-        printf("%*d  %*s  %s  %s  %d to %d  1  %d  %d\n", 2, ++(*sno), 8, param->name, string_tokens1[param->type], currFunc->name,
-            currFunc->idTable->beg, currFunc->idTable->last, width, *offset);
-        *offset += width;
+void printRowParam(struct FuncTable *currFunc, struct Parameters *param, int *sno) {
+    if (param->arr_or_not) {
+        printf("%2d  %8s  array(%d,%s)  %10s  %d to %d  1  %d  %d\n", ++(*sno), param->name, param->end, string_tokens1[param->type], currFunc->name,
+            currFunc->idTable->beg, currFunc->idTable->last, param->width, param->offset);
     }
     else {
-        printf("%*d  %*s  array(%d,%s)  %s  %d to %d  1  %d  %d\n", 2, ++(*sno), 8, param->name, param->end, string_tokens1[param->type], 
-            currFunc->name, currFunc->idTable->beg, currFunc->idTable->last, width * param->end, *offset);
-        *offset += param->end * width;
+        printf("%2d  %8s  %s  %10s  %d to %d  1  %d  %d\n", ++(*sno), param->name, string_tokens1[param->type], currFunc->name,
+            currFunc->idTable->beg, currFunc->idTable->last, param->width, param->offset);
     }
 }
 
-void printRowTuple(struct FuncTable *currFunc, struct IdTable *currTable, struct IdTuple *tuple, int *offset, int *sno) {
-    int width;
-    switch (tuple->type) {
-        case BOOLEAN : width = 1;
-            break;
-        case REAL : width = 4;
-            break;
-        case INTEGER : width = 2;
-        default : ;
-    }
-    if (tuple->arr_or_not == 0) {    
-        printf("%*d  %*s  %s  %s  %d to %d  %d  %d  %d\n", 2, ++(*sno), 8, tuple->name, string_tokens1[tuple->type], currFunc->name,
-            currTable->beg, currTable->last, currTable->nesting, width, *offset);
-        *offset += width;
+void printRowTuple(struct FuncTable *currFunc, struct IdTable *currTable, struct IdTuple *tuple, int *sno) {
+    if (tuple->arr_or_not) {
+        printf("%2d  %8s  array(%d,%s)  %10s  %d to %d  %d  %d  %d\n", ++(*sno), tuple->name, tuple->end, string_tokens1[tuple->type], currFunc->name,
+            currTable->beg, currTable->last, currTable->nesting, tuple->width, tuple->offset);
     }
     else {
-        printf("%*d  %*s  array(%d,%s)  %s  %d to %d  %d  %d  %d\n", 2, ++(*sno), 8, tuple->name, tuple->end, string_tokens1[tuple->type], 
-            currFunc->name, currTable->beg, currTable->last, currTable->nesting, width * tuple->end, *offset);
-        *offset += tuple->end * width;
+        printf("%2d  %8s  %s  %10s  %d to %d  %d  %d  %d\n", ++(*sno), tuple->name, string_tokens1[tuple->type], currFunc->name,
+            currTable->beg, currTable->last, currTable->nesting, tuple->width, tuple->offset);
     }
 }
 
-void printIdTable(struct FuncTable *currFunc, struct IdTable *currTable, int *offset, int *sno, int param_count) {
+void printIdTable(struct FuncTable *currFunc, struct IdTable *currTable, int *sno) {
     if (currTable) {
-        struct IdTuple *temp_tuple, *currTuple = currTable->idTuple;
-        temp_tuple = currTuple;
-        if (currTable->parent == NULL) {
-            while (param_count--) {
-                temp_tuple = temp_tuple->next;
-            }
-        }
-        while (currTuple && temp_tuple) {
-            printRowTuple(currFunc, currTable, currTuple, offset, sno);
+        struct IdTuple *currTuple = currTable->idTuple;
+        
+        while (currTuple) {
+            printRowTuple(currFunc, currTable, currTuple, sno);
             currTuple = currTuple->next;
-            temp_tuple = temp_tuple->next;
         }
-        printIdTable(currFunc, currTable->child, offset, sno, param_count);
-        printIdTable(currFunc, currTable->next, offset, sno, param_count);
+        printIdTable(currFunc, currTable->child, sno);
+        printIdTable(currFunc, currTable->next, sno);
     }
 }
 
@@ -597,21 +613,17 @@ void printSymbolTable() {
     while (currFunc) {
         struct Parameters *in = currFunc->in;
         struct Parameters *out = currFunc->out;
-        int offset = 0;
-        int param_count = 0;
         while (in) {
-            printRowParam(currFunc, in, &offset, &sno);
+            printRowParam(currFunc, in, &sno);
             in = in->next;
-            param_count++;
         }
 
         while (out) {
-            printRowParam(currFunc, out, &offset, &sno);
+            printRowParam(currFunc, out, &sno);
             out = out->next;
-            param_count++;
         }
 
-        printIdTable(currFunc, currFunc->idTable, &offset, &sno, param_count);
+        printIdTable(currFunc, currFunc->idTable, &sno);
         currFunc = currFunc->next;
     }
 }

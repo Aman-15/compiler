@@ -2,7 +2,7 @@
 
 struct ASTNode;
 
-union NodeType {
+struct NodeType {
 	struct FuncTable *funcEntry;
 	struct IdTuple *tupleEntry;
 	struct ASTNode *astNode;
@@ -19,7 +19,7 @@ union ast_value {
 struct ASTNode {
 	// union NodeType nodeType;
 	enum enum_token tokenID;
-	union NodeType *child;
+	struct NodeType *child;
 	struct ASTNode *parent;
 	enum enum_token type;
 	union ast_value val;

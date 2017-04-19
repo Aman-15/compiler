@@ -21,50 +21,123 @@ int main(int argc, char *argv[])
 	struct token *head = returnHead();
 	int *rules;
 	int op;
+
+	printf("1. Print the Token list\n");
+	printf("2. Parse the code to verify syntactic correctness\n");
+	printf("3. Print the Abstract Syntax Tree (Pre Order)\n");
+	printf("4. Display the memory allocated to the Parse tree and AST\n");
+	printf("5. Print the Symbol Table\n");
+	printf("6. Compile the code to verify syntactic and semantic correctness\n");
+	printf("7. Produce the assembly code\n");
+	printf("\nEnter choice. ");	
+
 	scanf("%d", &op);
 	int j = 0;
 	int i = 0;
-	FILE *fp;
+	FILE *fp = NULL;
 	TREENODEPTR root;
 	struct ASTNode *ast_root;
 	switch(op)
 	{
 		case 1:
-			removeCommentsConsole(argv[1]);
-			break;
-		case 2:
 			printlist();
 			break;
-		case 3:
-			// printlist();
+		
+		case 2:
 			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
 			for(i = 0; rules[i] != -1; i++);
 			root = generateParseTree(rules, &j, i, NULL);
 			printf("PARSE TREE generated\n");
 			setFields(root, &(returnHead()->next));
-			fp = fopen(argv[2], "w");
-			printTreeInorder(fp, root);
+			printTreeInorder(root);
 			break;
+		
+		case 3:
+			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
+			for(i = 0; rules[i] != -1; i++);
+			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
+			setFields(root, &(returnHead()->next));
+			makeTable(root);
+			ast_root = generateAST(root);
+			printf("AST generated\n");
+			printAST(ast_root);
+			break;
+
 		case 4:
 			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
 			for(i = 0; rules[i] != -1; i++);
-			
 			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
 			setFields(root, &(returnHead()->next));
-			fp = fopen(argv[2], "w");
-			printTreeInorder(fp, root);
-			printf("Parse Tree Printed\n");
-			// printf("%s\n", string_tokens1[root->t + count_terminal]);
+			makeTable(root);
+			ast_root = generateAST(root);
+			printf("AST generated\n");
+			//displayAmountOfMemory();
+			break;
+
+		case 5:
+			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
+			for(i = 0; rules[i] != -1; i++);
+			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
+			setFields(root, &(returnHead()->next));
 			makeTable(root);
 			printf("Symbol Table generated\n");
-			printSymbolTable();
-			// ast_root = generateAST(root);
-			// printf("AST generated\n");
-			
+			printSymbolTable();			
+			break;
+
+		case 6:
+			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
+			for(i = 0; rules[i] != -1; i++);
+			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
+			setFields(root, &(returnHead()->next));
+			makeTable(root);
+			ast_root = generateAST(root);
+			//typeCheck();
+			break;
+
+		case 7:
+			rules = parseInputSourceCode(head->next);
+			if (rules == NULL) {
+				printf("Syntax Error\n");
+				return 0;
+			}
+			for(i = 0; rules[i] != -1; i++);
+			root = generateParseTree(rules, &j, i, NULL);
+			printf("PARSE TREE generated\n");
+			setFields(root, &(returnHead()->next));
+			makeTable(root);
+			ast_root = generateAST(root);
+			//typeCheck();
+			fp = fopen(argv[2], "w");
+			//printAssemblyCode();
+
+		default:
+			printf("Wrong Choice.\n");
+			printf("Exiting...\n");
 			break;
 	}
-	// for(int i = 0; i < ast_root->child_count; i++){
-	// 			printf("%s\n", ast_root->child[i]);
-	// 		}
 	return 0;
 }

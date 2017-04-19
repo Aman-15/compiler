@@ -21,6 +21,7 @@ struct IdTuple {
     enum enum_token type;
     int arr_or_not;
     int start, end;
+    int width, offset;
     struct IdTuple *next;
 };
 
@@ -29,7 +30,7 @@ struct IdTable {
     int beg, last;
     int count;
     struct IdTable *child, *next, *parent;
-    struct IdTuple *idTuple;
+    struct IdTuple *idTuple, *idTupleLast;
 };
 
 struct Parameters {
@@ -38,6 +39,7 @@ struct Parameters {
     int line_num;
     int arr_or_not;
     int start, end;
+    int width, offset;
     struct Parameters *next;
 };
 
