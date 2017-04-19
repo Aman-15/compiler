@@ -27,7 +27,7 @@ start
 		r[a]:= p[b] + list[b];				    **ERROR_T: type mismatch of elements belonging to two different types of arrays**
                 newarr[b]:=list[b]+list[b]; 			    **No type mismatch**
 		t:= list[b]+34.5<=newarr[b];		    **No type mismatch**
-		a:= t AND list[b]+5.3;				    **ERROR_T: type mismatch of real and boolean operands with logical AND**		
+		a:= t AND list[index]+5.3;				    **ERROR_T: type mismatch of real and boolean operands with logical AND**		
 	end
 	for(index in  1..15)
 	start
@@ -60,7 +60,7 @@ start
 	declare A:array[1..15] of real;                            **scope: Nesting level 1; module: driver; lines: 59 to 67 **
 	declare k:integer;					   **scope: Nesting level 1; module: driver; lines: 59 to 67 **
 	declare s:real;						   **scope: Nesting level 1; module: driver; lines: 59 to 67 **
-	get_value(k);
+	
 	use module readArr with parameters A,u1;		   **ERROR_V: variable u1 not declared**
 	[s]:= use module arraySum with parameters A,k;
 	print(s);
@@ -78,7 +78,7 @@ start
 	start
 		declare x_1, x_2:boolean;			**scope: Nesting level 2; module: readArr; lines: 78 to 85 **
  		x_1:= u2<=10;				**ERROR_V: variable u2 is not declared**
-		get_value(tempvar);
+		
 		declare x_1, x_3: integer; 			**ERROR_V: variable x_1 is already declared in the current scope**
 		arr1[i]:=tempvar;				**ERROR_T: type mismatch, tempvar is visible and is of type real while the array element is boolean**
 		i:=i+1;
