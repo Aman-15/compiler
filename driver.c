@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	int op;
 
 	printf("1. Print the Token list\n");
-	printf("2. Parse the code to verify syntactic correctness\n");
+	printf("2. Parse the code to verify syntactic correctness and print Parse Tree\n");
 	printf("3. Print the Abstract Syntax Tree (Pre Order)\n");
 	printf("4. Display the memory allocated to the Parse tree and AST\n");
 	printf("5. Print the Symbol Table\n");
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	scanf("%d", &op);
 	int j = 0;
 	int i = 0;
-	FILE *fp = NULL;
+	// FILE *fp = NULL;
 	TREENODEPTR root;
 	struct ASTNode *ast_root;
 	switch(op)
@@ -114,6 +114,8 @@ int main(int argc, char *argv[])
 			printf("PARSE TREE generated\n");
 			setFields(root, &(returnHead()->next));
 			makeTable(root);
+			checkIfOutAssigned();
+			// printf("here\n");
 			ast_root = generateAST(root);
 			//typeCheck();
 			break;
@@ -131,7 +133,7 @@ int main(int argc, char *argv[])
 			makeTable(root);
 			ast_root = generateAST(root);
 			//typeCheck();
-			fp = fopen(argv[2], "w");
+			FILE *fp = fopen("code.asm", "w");
 			//printAssemblyCode();
 
 		default:

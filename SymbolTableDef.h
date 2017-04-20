@@ -40,6 +40,7 @@ struct Parameters {
     int arr_or_not;
     int start, end;
     int width, offset;
+    int assigned;
     struct Parameters *next;
 };
 

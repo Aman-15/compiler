@@ -1,3 +1,9 @@
+<<module empty>>
+takes input[a:boolean];
+start
+
+end
+
 <<<driver program>>>
 start
 	

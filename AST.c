@@ -37,8 +37,12 @@ struct ASTNode *createASTNode(){
 		newnode->child[i].tupleEntry = NULL;
 		i++;
 	}
+	
 	newnode->parent = NULL;
 	newnode->child_count = 0;
+	newnode->tokenID = 0;
+	newnode->type = 0;
+	newnode->val.float_val = 0;
 	return newnode;
 }
 
@@ -499,7 +503,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					addAstChild(ast, nopae);
 					addAstChild(ast, generateAST(root->child[2]));
 					// printf("%d\n", nopae->type - INTEGER);
-					if (nopae->type != REAL && nopae->type != INTEGER) {
+					if (nopae->type == BOOLEAN) {
 						printf("line:%d Expression must be either INTEGER or REAL\n", root->child[0]->child[0]->line_num);
 						free(ast);
 						return NULL;

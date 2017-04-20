@@ -165,23 +165,23 @@ int checkinTable(struct IdTable *table, char *name) {
     return 0;
 }
 
-int checkInParameters(struct FuncTable *curr, char *name) {
+struct Parameters* checkInParameters(struct FuncTable *curr, char *name) {
     struct Parameters *out = curr->out;
     struct Parameters *in = curr->in;
 
     while (out) {
         if (strcmp(out->name, name) == 0)
-            return 1;
+            return out;
         out = out->next;
     }
 
     while (in) {
         if (strcmp(in->name, name) == 0)
-            return 1;
+            return in;
         in = in->next;
     }
 
-    return 0;
+    return NULL;
 }
 
 //Adds a table to the funcList
@@ -272,6 +272,25 @@ void addTupleEntry(struct IdTable *currIdTable, TREENODEPTR currnode, char *name
         currnode->tuple = temp;
 }
 
+void checkIfOutAssigned() {
+    struct FuncTable *curr = funcList;
+    while (curr != NULL) {
+        if (strcmp(curr->name, "driver") == 0)
+            curr = curr->next;
+
+        else {
+            struct Parameters *out = curr->out;
+            while (out) {
+                if (out->assigned == 0) {
+                    printf("line:%d Output Parameter \"%s\" is never assigned a value\n", out->line_num, out->name);
+                }
+                out = out->next;
+            }
+            curr = curr->next;
+        }
+    }
+}
+
 //pop_stulating the symbol tables
 void makeTable(TREENODEPTR treeNode) {
     
@@ -332,7 +351,7 @@ void makeTable(TREENODEPTR treeNode) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
                     }
-                    else if (checkInParameters(currFuncTable, _idlist->child[0]->lexeme) == 1) {
+                    else if (checkInParameters(currFuncTable, _idlist->child[0]->lexeme) != NULL) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration of Parameters Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
 
@@ -355,7 +374,7 @@ void makeTable(TREENODEPTR treeNode) {
                         if (checkIdentifierifDeclared(currIdTable,n, n->lexeme) == 1) {
                             printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
-                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme) == 1) {
+                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme) != NULL) {
                             printf("line:%d \"%s\" Re-declaration of Parameters Error\n", n->line_num, n->lexeme);
                         }
                         else {
@@ -420,12 +439,13 @@ void makeTable(TREENODEPTR treeNode) {
                     in->width = getWidthParameters(in);
                     offset += getWidthParameters(in);
                     in->line_num = temp->line_num;
+                    in->assigned = 0;
                     currFuncTable->in = in_start;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkInParameters(currFuncTable, n->lexeme) == 1) {
+                        if (checkInParameters(currFuncTable, n->lexeme) != NULL) {
                             printf("line:%d \"%s\" Already in the input parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
@@ -445,6 +465,7 @@ void makeTable(TREENODEPTR treeNode) {
                             in->next->line_num = n->line_num;
                             in->next->offset = offset;
                             in->next->width = getWidthParameters(in->next);
+                            in->next->assigned = 0;
                             offset += getWidthParameters(in->next);
                             in = in->next;
                         }
@@ -478,12 +499,13 @@ void makeTable(TREENODEPTR treeNode) {
                     out->width = getWidthParameters(out);
                     offset += getWidthParameters(out);
                     currFuncTable->out = out_start;
+                    out->assigned = 0;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkInParameters(currFuncTable, n->lexeme) == 1) {
-                        printf("line:%d \"%s\" Already in the output parame\n", n->line_num, n->lexeme);
+                        if (checkInParameters(currFuncTable, n->lexeme) != NULL) {
+                            printf("line:%d \"%s\" Already in the parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
                             
@@ -502,6 +524,7 @@ void makeTable(TREENODEPTR treeNode) {
                             out->next->line_num = n->line_num;
                             out->next->offset = offset;
                             out->next->width = getWidthParameters(out->next);
+                            out->next->assigned = 0;
                             offset += getWidthParameters(out->next);
                             out = out->next;
                         }
@@ -511,8 +534,13 @@ void makeTable(TREENODEPTR treeNode) {
                 }
 
                 else {
-                    if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == 0) {
+                    if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == NULL) {
                         printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
+                    }
+                    else if (temp->parent->t == assignmentStmt) {
+                        struct Parameters *temp1 = checkInParameters(currFuncTable, temp->lexeme);
+                        if (temp1 != NULL)
+                            temp1->assigned = 1;
                     }
                 }
 
@@ -546,7 +574,6 @@ void makeTable(TREENODEPTR treeNode) {
                     else{
                         currFuncTable = f;
                         currFuncTable->status = defined;
-
                     }
                 }
                 else {

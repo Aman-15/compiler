@@ -170,11 +170,6 @@ void generateFollowSet(char *FollowSetFile) {
 		int len = strlen(buf);
 		char front = buf[index];
 		while (index < len) {
-			// int t_or_nt;
-			// if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x') || buf[index] == '$')
-			// 	t_or_nt = 1;
-			// else if (front >= 'a' && front <= 'z')
-			// 	t_or_nt = 0;
 			if ((front >= 'A' && front <= 'Z') || (front >= 'a' && front <= 'z') || buf[index] == '$') {
 				char id[40];
 				int i=0;
@@ -225,11 +220,6 @@ void generateFirstSet(char *FirstSetFile) {
 		int len = strlen(buf);
 		char front = buf[index];
 		while (index < len) {
-			// int t_or_nt;
-			// if (front >= 'A' && front <= 'Z' || (front == 'e' && buf[index+1] != 'x'))
-			// 	t_or_nt = 1;
-			// else if (front >= 'a' && front <= 'z')
-			// 	t_or_nt = 0;
 			if ((front >= 'A' && front <= 'Z') || (front >= 'a' && front <= 'z')) {
 				char id[40];
 				int i=0;
