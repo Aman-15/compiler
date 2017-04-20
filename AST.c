@@ -72,11 +72,12 @@ struct ASTNode *generateAST(TREENODEPTR root){
 	struct ASTNode *ast = createASTNode();
 	if(root->t_or_nt == 0){
 		ast->tokenID = root->t;
+		int i;
 		switch(root->t){
 
 			case program: //Rule 1
 				// ast->tokenID = program;
-				for(int i = 0; i < root->child_count; i++){
+				for(i = 0; i < root->child_count; i++){
 					addAstChild(ast, generateAST(root->child[i]));
 				}
 				// return ast;
@@ -85,7 +86,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case moduleDeclarations: //Rule 2
 				// ast->tokenID = moduleDeclarations;
 				if(root->child[0]->t == moduleDeclaration){
-					for(int i = 0; i < root->child_count; i++){
+					for(i = 0; i < root->child_count; i++){
 						addAstChild(ast, generateAST(root->child[i]));
 					}
 					// return ast;	
@@ -99,7 +100,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case otherModules: //Rule 5
 				// ast->tokenID = otherModules;
 				if(root->child[0]->t == module){
-					for(int i = 0; i < root->child_count; i++){
+					for(i = 0; i < root->child_count; i++){
 						addAstChild(ast, generateAST(root->child[i]));
 					}
 					// return ast;
@@ -125,7 +126,8 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case statements: //Rule 25
 				// ast->tokenID = statements;
 				if(root->child[0]->t == statement){
-					for(int i = 0; i < root->child_count; i++){
+					//printf("%d \n", root->child_count);
+					for(i = 0; i < root->child_count; i++){
 						addAstChild(ast, generateAST(root->child[i]));
 					}
 					// return ast;
@@ -199,10 +201,10 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			case var:
 				switch(root->child[0]->t) {
 					case ID:	//Rule 34
-						//Incomplete
 						addIdChild(ast, root->child[0]->tuple);
-						if (root->child[0]->tuple)
+						if (root->child[0]->tuple) {
 							ast->type = root->child[0]->tuple->type;
+						}
 						if(root->child[1]->child[0]->t != e){
 							addIdChild(ast, root->child[1]->child[1]->tuple);	
 						}
@@ -238,15 +240,11 @@ struct ASTNode *generateAST(TREENODEPTR root){
 
 			case whichId:	//Rule 39
 				if (root->child[0]->t != e) {
-					//Incomplete
 					printf("In whichId, should never reach here\n");
 				}
 				else {	//Rule 40
 					printf("In whichId, should never reach here\n");
-					free(ast);
-					return NULL;
 				}
-
 			break;
 
 			case simpleStmt: //Rule 41, Rule 42
@@ -255,11 +253,10 @@ struct ASTNode *generateAST(TREENODEPTR root){
 			break;
 
 			case assignmentStmt:	//Rule 43
-				//Incomplete
 				;struct ASTNode *ws = generateAST(root->child[1]);
-				//printf("Line num before seg fault: %d\n", root->line_num);
 				
 				addIdChild(ast, root->child[0]->tuple);
+				
 				if(root->child[0]->tuple && ws->type != root->child[0]->tuple->type){
 					if (ws->type != 0)
 						printf("line:%d Type mismatch while assigning '%s' and '%s'\n", root->child[0]->line_num, string_tokens2[ws->type], string_tokens2[root->child[0]->tuple->type]);
@@ -284,24 +281,23 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				struct ASTNode *expr = generateAST(root->child[4]);
 				ast->type = expr->type;
 				if(root->child[1]->child[0]->t == NUM){
-					addAstChild(ast, generateAST(root->child[1]));
-					addAstChild(ast, expr);
+					free(ast);
+					printf("line:%d Index must be a variable\n", root->child[1]->child[0]->line_num);
 				}
 				else{// Rule 49
-					addIdChild(ast, root->child[1]->child[0]->tuple);
-					addAstChild(ast, expr);
+					if (root->child[1]->child[0]->tuple->type != INTEGER) {
+						free(ast);
+						printf("line:%d Index must be an integer\n", root->child[1]->child[0]->line_num);
+					}
+					else {
+						addIdChild(ast, root->child[1]->child[0]->tuple);
+						addAstChild(ast, expr);
+					}
 				}
 			break;
 
 			case index1:
-				if (root->child[0]->t == NUM) {	//Rule 48
-					ast->type = INTEGER;
-					ast->val.int_val = root->child[0]->val.int_val;
-				}
-				else {	//Rule 49
-					//Incomplete
-
-				}
+				//Rule 48 and Rule 49 handled above
 			break;
 
 			case moduleReuseStmt:	//Rule 50
@@ -319,9 +315,6 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					printf("Line: %d Error: Used function is never defined\n", root->child[1]->line_num);
 				}
 
-				//checking type of input_plist
-				// printf("%s\n", in->name);
-				// printf("%s\n", in_list->child[0].tupleEntry->name);
 				if(in && in_list) {
 					if(in_list->child[0].tupleEntry && in->type != in_list->child[0].tupleEntry->type){
 						printf("1 Line: %d Error in input Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[in->type], string_tokens2[in_list->child[0].tupleEntry->type]);
@@ -329,8 +322,6 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					in = in->next;
 					in_list = in_list->child[1].astNode;
 					while(in && in_list){
-						// printf("%s\n", in->name);
-						// printf("%s\n", in_list->child[0].tupleEntry->name);
 						if(in_list->child[0].tupleEntry && in->type != in_list->child[0].tupleEntry->type){
 
 							printf("2 Line: %d Error in input Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[in->type], string_tokens2[in_list->child[0].tupleEntry->type]);
@@ -354,8 +345,6 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					out = out->next;
 					out_list = out_list->child[1].astNode;
 					while(out && out_list){
-						// printf("%s\n", in->name);
-						// printf("%s\n", in_list->child[0].tupleEntry->name);
 						if(out_list->child[0].tupleEntry && out->type != out_list->child[0].tupleEntry->type){
 
 							printf("2 Line: %d Error in output Parameters, Expected %s but found %s\n", root->child[1]->line_num, string_tokens2[out->type], string_tokens2[out_list->child[0].tupleEntry->type]);
@@ -502,7 +491,6 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					addAstChild(ast, generateAST(root->child[0]));
 					addAstChild(ast, nopae);
 					addAstChild(ast, generateAST(root->child[2]));
-					// printf("%d\n", nopae->type - INTEGER);
 					if (nopae->type == BOOLEAN) {
 						printf("line:%d Expression must be either INTEGER or REAL\n", root->child[0]->child[0]->line_num);
 						free(ast);
@@ -631,11 +619,40 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				if (root->child[2]->tuple->type == REAL) {
 					printf("line:%d Switch condition must be a INTEGER or BOOLEAN\n", root->child[0]->line_num);
 				}
-				else if (root->child[2]->tuple->type == INTEGER && dflt == NULL) {
-					printf("line:%d Switch must have a \"default\" case\n", root->child[0]->line_num);
+				if(root->child[2]->tuple->type == BOOLEAN){
+					if(cstmts->child[0].astNode->type != BOOLEAN){
+						printf("Line: %d expected value here is of type boolean\n", root->child[5]->child[0]->line_num);
+					}
+					;struct ASTNode *cstmt = cstmts->child[2].astNode;
+					TREENODEPTR csmt_pt = root->child[5]->child[6];
+					while(cstmt != NULL){
+						if(cstmt->child[0].astNode->type != BOOLEAN){
+							printf("Line: %d expected value here is of type boolean\n", csmt_pt->child[0]->line_num);
+						}
+						csmt_pt = csmt_pt->child[6];
+						cstmt = cstmt->child[2].astNode;	
+					}
+				}
+				else if(root->child[2]->tuple->type == INTEGER){
+					if(cstmts->child[0].astNode->type != INTEGER){
+						printf("Line: %d expected value here is of type INTEGER\n", root->child[5]->child[0]->line_num);
+					}
+					;struct ASTNode *cstmt = cstmts->child[2].astNode;
+					TREENODEPTR csmt_pt = root->child[5]->child[6];
+					while(cstmt != NULL){
+						if(cstmt->child[0].astNode->type != INTEGER){
+							printf("Line: %d expected value here is of type INTEGER\n", csmt_pt->child[0]->line_num);
+						}
+						csmt_pt = csmt_pt->child[6];
+						cstmt = cstmt->child[2].astNode;	
+					}
+				}
+				
+				if (root->child[2]->tuple->type == INTEGER && dflt == NULL) {
+					printf("line:%d Switch must have a \"default\" case if it is an integer\n", root->child[0]->line_num);
 				}
 				else if (root->child[2]->tuple->type == BOOLEAN && dflt != NULL) {
-					printf("line:%d Switch must not have a \"default\" case\n", root->child[0]->line_num);
+					printf("line:%d Switch must not have a \"default\" case if it is a boolean\n", root->child[0]->line_num);
 				}
 				addAstChild(ast, cstmts);
 				addAstChild(ast, dflt);
@@ -680,8 +697,7 @@ struct ASTNode *generateAST(TREENODEPTR root){
 				return NULL;
 			break;
 
-			case iterativeStmt:	//Rule 105
-				//Incomplete
+			case iterativeStmt:
 				if (root->child[0]->t != FOR) {	//Rule 106
 					struct ASTNode *aobe2 = generateAST(root->child[2]);
 					if (aobe2->type != BOOLEAN) {
@@ -692,6 +708,9 @@ struct ASTNode *generateAST(TREENODEPTR root){
 					addAstChild(ast, generateAST(root->child[5]));
 				}
 				else{ //Rule 105
+					if (root->child[2]->tuple->type != INTEGER) {
+						printf("line:%d Iterator must be an integer\n", root->child[2]->line_num);
+					}
 					addIdChild(ast, root->child[2]->tuple);
 					addAstChild(ast, generateAST(root->child[4]));
 					addAstChild(ast, generateAST(root->child[7]));

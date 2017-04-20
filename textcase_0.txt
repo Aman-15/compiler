@@ -1,10 +1,7 @@
-<<module empty>>
-takes input[a:boolean];
-start
-
-end
-
 <<<driver program>>>
 start
-	
+	declare x,y,z,a,b,c,d:integer;
+	declare a1,a2,a3,a4:boolean;
+	a1 := (b*2 +c)/d <= c*10; 		**This should be valid**
+	a1 := x < y < z				**This shouldn't**
 end

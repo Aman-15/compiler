@@ -165,19 +165,46 @@ int checkinTable(struct IdTable *table, char *name) {
     return 0;
 }
 
-struct Parameters* checkInParameters(struct FuncTable *curr, char *name) {
+struct Parameters* checkInParameters(struct FuncTable *curr, char *name, TREENODEPTR currnode) {
     struct Parameters *out = curr->out;
     struct Parameters *in = curr->in;
 
+    // printf("Checking for %s\n", name);
     while (out) {
-        if (strcmp(out->name, name) == 0)
+        if (strcmp(out->name, name) == 0) {
+            struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+            strcpy(currId->name, out->name);
+            currId->type = out->type;
+            currId->line_dec = currId->line_ref = -1;
+            currId->arr_or_not = out->arr_or_not;
+            currId->start = out->start;
+            currId->end = out->end;
+            currId->width = out->width;
+            currId->offset = out->offset;
+            currId->next = NULL;
+            currnode->tuple = currId;
+            
             return out;
+        }
         out = out->next;
     }
 
     while (in) {
-        if (strcmp(in->name, name) == 0)
+        if (strcmp(in->name, name) == 0) {
+            struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+            strcpy(currId->name, in->name);
+            currId->type = in->type;
+            currId->line_dec = currId->line_ref = -1;
+            currId->arr_or_not = in->arr_or_not;
+            currId->start = in->start;
+            currId->end = in->end;
+            currId->width = in->width;
+            currId->offset = in->offset;
+            currId->next = NULL;
+            currnode->tuple = currId;
+            
             return in;
+        }
         in = in->next;
     }
 
@@ -221,6 +248,7 @@ struct IdTable* getNewTable() {
     temp->parent = NULL;
     temp->idTuple = NULL;
     temp->idTupleLast = NULL;
+    strcpy(temp->iterator,"\0");
     return temp;
 }
 
@@ -347,14 +375,17 @@ void makeTable(TREENODEPTR treeNode) {
                     pop_st(stack); //DataType pop_stped
                     pop_st(stack); //SEMICOLON pop_stped
 
-                    if (checkIdentifierifDeclared(currIdTable, _idlist->child[0], _idlist->child[0]->lexeme) == 1) {
+                    if (checkinTable(currIdTable, _idlist->child[0]->lexeme) == 1) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
                     }
-                    else if (checkInParameters(currFuncTable, _idlist->child[0]->lexeme) != NULL) {
+                    else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, _idlist->child[0]->lexeme, _idlist->child[0]) != NULL) {
                         //error: already declared
                         printf("line:%d \"%s\" Re-declaration of Parameters Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
 
+                    }
+                    else if(strcmp(_idlist->child[0]->lexeme, currIdTable->iterator) == 0){
+                        printf("Line: %d Error: Cannot redeclare the iterator\n", _idlist->parent->child[0]->line_num);
                     }
                     else {
                         //Handle Arrays separately
@@ -371,11 +402,14 @@ void makeTable(TREENODEPTR treeNode) {
 
                         TREENODEPTR n = cur->child[1];
 
-                        if (checkIdentifierifDeclared(currIdTable,n, n->lexeme) == 1) {
+                        if (checkinTable(currIdTable, n->lexeme) == 1) {
                             printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
-                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme) != NULL) {
+                        else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
                             printf("line:%d \"%s\" Re-declaration of Parameters Error\n", n->line_num, n->lexeme);
+                        }
+                        else if(strcmp(n->lexeme, currIdTable->iterator) == 0){
+                            printf("Line: %d Error: Cannot redeclare the iterator\n", n->line_num);
                         }
                         else {
                             if (_dtype->child[0]->t == ARRAY) {
@@ -406,6 +440,9 @@ void makeTable(TREENODEPTR treeNode) {
                     currIdTable->beg = temp->line_num;
                     currIdTable->nesting = currIdTable->parent->nesting+1;
                 }
+                if(temp->parent->t == iterativeStmt && temp->parent->child[0]->t == FOR){ //for adding iterator in for
+                    strcpy(currIdTable->iterator, temp->parent->child[2]->lexeme);
+                }
             }
 
             else if (temp->t == END) {
@@ -425,49 +462,72 @@ void makeTable(TREENODEPTR treeNode) {
                     struct Parameters *in_start = (struct Parameters *)malloc(sizeof(struct Parameters));
                     struct Parameters *in = in_start;
                     strcpy(in->name, temp->lexeme);
+
+                    struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+                    currId->line_dec = -1;
+                    currId->line_ref = -1;
+                    
                     if (_dtype->child[0]->t == ARRAY) {
-                        in->start = _dtype->child[2]->child[0]->val.int_val;
-                        in->end = _dtype->child[2]->child[2]->val.int_val;
-                        in->type = _dtype->child[5]->child[0]->t;
-                        in->arr_or_not = 1;
+                        currId->start = in->start = _dtype->child[2]->child[0]->val.int_val;
+                        currId->end = in->end = _dtype->child[2]->child[2]->val.int_val;
+                        currId->type = in->type = _dtype->child[5]->child[0]->t;
+                        currId->arr_or_not = in->arr_or_not = 1;
                     }
                     else {
-                        in->type = _dtype->child[0]->t;
-                        in->arr_or_not = 0;
+                        currId->type = in->type = _dtype->child[0]->t;
+                        currId->arr_or_not = in->arr_or_not = 0;
+                        currId->start = in->start = -1;
+                        currId->end = in->end = -1;
                     }
-                    in->offset = offset;
-                    in->width = getWidthParameters(in);
+                    currId->offset = in->offset = offset;
+                    currId->width = in->width = getWidthParameters(in);
+                    currId->next = NULL;
                     offset += getWidthParameters(in);
                     in->line_num = temp->line_num;
                     in->assigned = 0;
                     currFuncTable->in = in_start;
+                    temp->tuple = currId;
+                    in->next = NULL;
+                    // printf("\ntype is %s\n", string_tokens1[temp->tuple->type]);
+                    strcpy(currId->name, temp->lexeme);
+
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkInParameters(currFuncTable, n->lexeme) != NULL) {
+                        if (checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
                             printf("line:%d \"%s\" Already in the input parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
                             in->next = (struct Parameters *)malloc(sizeof(struct Parameters));
                             strcpy(in->next->name, n->lexeme);
+
+                            struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+                            currId->line_dec = -1;
+                            currId->line_ref = -1;
+
                             if (_dtype->child[0]->t == ARRAY) {
-                                printf("%s\n", in->next->name);
-                                in->next->start = _dtype->child[2]->child[0]->val.int_val;
-                                in->next->end = _dtype->child[2]->child[2]->val.int_val;
-                                in->next->arr_or_not = 1;
-                                in->next->type = _dtype->child[5]->child[0]->t;
+                                currId->start = in->next->start = _dtype->child[2]->child[0]->val.int_val;
+                                currId->end = in->next->end = _dtype->child[2]->child[2]->val.int_val;
+                                currId->arr_or_not = in->next->arr_or_not = 1;
+                                currId->type = in->next->type = _dtype->child[5]->child[0]->t;
                             }
                             else {
-                                in->next->type = _dtype->child[0]->t;
-                                in->next->arr_or_not = 0;
+                                currId->type = in->next->type = _dtype->child[0]->t;
+                                currId->arr_or_not = in->next->arr_or_not = 0;
+                                currId->start = in->next->start = -1;
+                                currId->end = in->next->end = -1;
                             }
                             in->next->line_num = n->line_num;
-                            in->next->offset = offset;
-                            in->next->width = getWidthParameters(in->next);
+                            currId->offset = in->next->offset = offset;
+                            currId->width = in->next->width = getWidthParameters(in->next);
+                            currId->next = NULL;
                             in->next->assigned = 0;
+                            in->next->next = NULL;
                             offset += getWidthParameters(in->next);
                             in = in->next;
+                            n->tuple = currId;
+                            strcpy(currId->name, n->lexeme);
                         }
                         cur = cur->child[4];
                         currFuncTable->in = in_start;
@@ -480,53 +540,90 @@ void makeTable(TREENODEPTR treeNode) {
                     pop_st(stack); //dataType pop_stped
                     TREENODEPTR cur = top_st(stack);
                     pop_st(stack); //ipList2 pop_stped
-
+                    
                     struct Parameters *out_start = (struct Parameters *)malloc(sizeof(struct Parameters));
-                    struct Parameters *out = out_start;
-                    strcpy(out->name, temp->lexeme);
-                    if (_dtype->child[0]->t == ARRAY) {
-                        out->start = _dtype->child[2]->child[0]->val.int_val;
-                        out->end = _dtype->child[2]->child[2]->val.int_val;
-                        out->type = _dtype->child[5]->child[0]->t;
-                        out->arr_or_not = 1;
+                    struct Parameters *out = NULL;
+                    currFuncTable->out = NULL;
+                    if (checkInParameters(currFuncTable, temp->lexeme, temp) != NULL) {
+                        printf("line:%d \"%s\" Already in the parameter list\n", temp->line_num, temp->lexeme);
                     }
                     else {
-                        out->type = _dtype->child[0]->t;
-                        out->arr_or_not = 0;
+                        out = out_start;
+                        strcpy(out->name, temp->lexeme);
+
+                        struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+                        currId->line_dec = -1;
+                        currId->line_ref = -1;
+
+                        if (_dtype->child[0]->t == ARRAY) {
+                            currId->start = out->start = _dtype->child[2]->child[0]->val.int_val;
+                            currId->end = out->end = _dtype->child[2]->child[2]->val.int_val;
+                            currId->type = out->type = _dtype->child[5]->child[0]->t;
+                            currId->arr_or_not = out->arr_or_not = 1;
+                        }
+                        else {
+                            currId->type = out->type = _dtype->child[0]->t;
+                            currId->arr_or_not = out->arr_or_not = 0;
+                            currId->start = out->start = -1;
+                            currId->end = out->end = -1;
+                        }
+                        currId->offset = out->offset = offset;
+                        currId->width = out->width = getWidthParameters(out);
+                        currId->next = NULL;
+                        out->line_num = temp->line_num;
+                        out->offset = offset;
+                        out->width = getWidthParameters(out);
+                        offset += getWidthParameters(out);
+                        currFuncTable->out = out_start;
+                        out->assigned = 0;
+                        temp->tuple = currId;
+                        out->next = NULL;
                     }
-                    out->line_num = temp->line_num;
-                    out->offset = offset;
-                    out->width = getWidthParameters(out);
-                    offset += getWidthParameters(out);
-                    currFuncTable->out = out_start;
-                    out->assigned = 0;
 
                     while(cur->child[0]->t != e){
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
-                        if (checkInParameters(currFuncTable, n->lexeme) != NULL) {
+                        if (checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
                             printf("line:%d \"%s\" Already in the parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
                             
-                            out->next = (struct Parameters *)malloc(sizeof(struct Parameters));
-                            strcpy(out->next->name, n->lexeme);
+                            if (out) {
+                                out->next = (struct Parameters *)malloc(sizeof(struct Parameters));
+                                out = out->next;
+                            }
+                            else
+                                out = out_start;
+                                
+                            strcpy(out->name, n->lexeme);
+
+                            struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
+                            currId->line_dec = -1;
+                            currId->line_ref = -1;
+                            
                             if (_dtype->child[0]->t == ARRAY) {
-                                out->next->start = _dtype->child[2]->child[0]->val.int_val;
-                                out->next->end = _dtype->child[2]->child[2]->val.int_val;
-                                out->next->type = _dtype->child[5]->child[0]->t;
-                                out->next->arr_or_not = 1;
+                                currId->start = out->start = _dtype->child[2]->child[0]->val.int_val;
+                                currId->end = out->end = _dtype->child[2]->child[2]->val.int_val;
+                                currId->type = out->type = _dtype->child[5]->child[0]->t;
+                                currId->arr_or_not = out->arr_or_not = 1;
                             }
                             else {
-                                out->next->type = _dtype->child[0]->t;
-                                out->next->arr_or_not = 0;
+                                currId->type = out->type = _dtype->child[0]->t;
+                                currId->arr_or_not = out->arr_or_not = 0;
+                                currId->start = out->start = -1;
+                                currId->end = out->end = -1;
                             }
-                            out->next->line_num = n->line_num;
-                            out->next->offset = offset;
-                            out->next->width = getWidthParameters(out->next);
-                            out->next->assigned = 0;
-                            offset += getWidthParameters(out->next);
-                            out = out->next;
+                            currId->offset = out->offset = offset;
+                            currId->width = out->width = getWidthParameters(out);
+                            currId->next = NULL;
+                            out->line_num = temp->line_num;
+                            out->offset = offset;
+                            out->width = getWidthParameters(out);
+                            offset += getWidthParameters(out);
+                            currFuncTable->out = out_start;
+                            out->assigned = 0;
+                            temp->tuple = currId;
+                            out->next = NULL;
                         }
                         cur = cur->child[4];
                         currFuncTable->out = out_start;
@@ -534,11 +631,11 @@ void makeTable(TREENODEPTR treeNode) {
                 }
 
                 else {
-                    if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme) == NULL) {
+                    if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme, temp) == NULL) {
                         printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
                     }
                     else if (temp->parent->t == assignmentStmt) {
-                        struct Parameters *temp1 = checkInParameters(currFuncTable, temp->lexeme);
+                        struct Parameters *temp1 = checkInParameters(currFuncTable, temp->lexeme, temp);
                         if (temp1 != NULL)
                             temp1->assigned = 1;
                     }

@@ -1,30 +1,15 @@
 declare module readArr;
 **the following function computes the sum of first n elements of the array**
 <<module arraySum>>
-takes input[list:array[1..15] of    integer, n:integer];
+takes input[list:array[1..15] of    real, n:integer];
 returns  [sum:real];
 start
 	declare index:integer;
-	declare t,n,sum:boolean;
-	list := list + n;
-
-	for(t in 1..15)
+	declare t:boolean;
+	sum:=0.0;	
+	for(index in  1..15)
 	start
-		t:= sum + index;
-		declare x,y,z,a,b,c,d:integer;
-		declare a1,a2,a3,a4,t:boolean;
-		a1 := (b*2 +c)/d <= c*10;
-		a1 := (a1 OR a3) AND (x<=y OR (z>=c));
-		switch(index)
-		start			
-			case true: print(list[index]);
-				   sum:=sum+list[index];
-				   declare index:integer;
-				   break;
-			case false: print(sum);
-				    print(index);
-				    break;
-		end
+		t:= index<=n;
 		** no need to increment the value of index as it will be taken care by the semantic rules associated with for construct, but an increment statement does not make its syntax incorrect**
 	end
 	print(sum);
@@ -35,7 +20,6 @@ start
 	declare k:integer;
 	declare s:real;
 	get_value(k);
-	A[s] := 5;
 	use module readArr with parameters A,k;
 	[s]:= use module arraySum with parameters A,k;
 	print(s);
@@ -52,7 +36,7 @@ start
 	declare tempvar:real;
 	declare i:integer;
 	i:=1;
-	while(1)
+	while(i<=k)
 	start
 		get_value(tempvar);
 		arr1[i]:=tempvar;

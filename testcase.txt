@@ -1,9 +1,13 @@
-<<<driver program>>>
-start
-	declare a:integer;
-end
 <<module empty>>
-takes input[a:boolean];
+takes input[a:integer, b:integer];
+start
+	declare t: boolean;
+	declare x,y,z : integer;
+	t := x - b;
+end
+
+<<<driver program>>>
+
 start
 
 end

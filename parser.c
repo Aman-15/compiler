@@ -318,7 +318,7 @@ int *parseInputSourceCode(struct token* tokens) {
 					tk = tk->next;
 			}
 			else {
-				printf("line:%d The token \"%s\" for lexeme \"%s\" does not match. The expected token here is \"%s\"\n", tk->line_num, string_tokens[tk->tokenID],
+				printf("prev %s line:%d The token \"%s\" for lexeme \"%s\" does not match. The expected token here is \"%s\"\n", string_tokens[tk->prev->tokenID], tk->line_num, string_tokens[tk->tokenID],
 					tk->lexeme, string_tokens[X->t]);
 				flag = 1;
 

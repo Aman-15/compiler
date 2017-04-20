@@ -20,7 +20,7 @@ int isEmpty(struct tnll *stack);
 struct FuncTable* findInFunctionList(char *name);
 int checkIdentifierifDeclared(struct IdTable *table, TREENODEPTR currnode, char *name);
 int checkinTable(struct IdTable *table, char *name);
-struct Parameters* checkInParameters(struct FuncTable *curr, char *name);
+struct Parameters* checkInParameters(struct FuncTable *curr, char *name, TREENODEPTR currnode);
 
 struct FuncTable* addFunc(struct FuncTable* currFuncTable);
 void addInParameter(struct FuncTable *currFuncTable, struct Parameters *inp, struct Parameters *outp);

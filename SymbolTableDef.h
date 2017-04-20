@@ -26,6 +26,7 @@ struct IdTuple {
 };
 
 struct IdTable {
+    char iterator[10];
     int nesting;
     int beg, last;
     int count;
