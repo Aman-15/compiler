@@ -639,9 +639,17 @@ void makeTable(TREENODEPTR treeNode) {
                         if (temp1 != NULL)
                             temp1->assigned = 1;
                     }
+
+                    if (temp->tuple->arr_or_not == 1 && temp->parent->t == var && temp->parent->child[1]->child[0]->t == e) {
+                        printf("line:%d Array must be indexed\n", temp->line_num);
+                    }
+                    else if (temp->tuple->arr_or_not == 1 && temp->parent->t == assignmentStmt && temp->parent->child[1]->child[0]->t == lvalueIDStmt) {
+                        printf("line:%d Array must be indexed\n", temp->line_num);
+                    }
                 }
 
             }
+
             else if(temp->t == USE) {
                 pop_st(stack); //module pop_stped
                 TREENODEPTR n = top_st(stack); //ID of function
