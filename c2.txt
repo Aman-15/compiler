@@ -8,14 +8,12 @@ start
 	get_value(y);
 	declare sum, value, x_1:integer;
 	z:= 19;
-	sum:= x*20-y*4+17-z;
-	t := sum <= 200 AND x>20;
 	switch(t)
 	start
-	case true: 	value:= sum+z*2-x*y-5;  
+	case true: 	value:= sum;  
 			x_1:= 100;
 			break;
-	case false: 	value:= z*3 - x*y-20;
+	case false: 	value:= z;
 			x_1:= 200;
 			break;
 	end

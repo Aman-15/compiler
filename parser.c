@@ -397,34 +397,65 @@ int *parseInputSourceCode(struct token* tokens) {
 	return rules;
 }
 
-void printTreeInorder(TREENODEPTR tree) {
+int noOfParsTNodes = 0;
+int sizeOfParsT = 0;
+
+void printTreeInorder(TREENODEPTR tree, int print) {
 	if (tree != NULL) {
 		if (tree->child_count > 0)
-			printTreeInorder(tree->child[0]);
+			printTreeInorder(tree->child[0], print);
 		
 		if(tree->t_or_nt == 1) {
-			if (tree->t == e)
-				printf("---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
+			if (tree->t == e) {
+				if (print)
+					printf("---- ---- e ---- %s yes ----\n", string_tokens[tree->parent->t + count_terminal]);
+				noOfParsTNodes++;
+				sizeOfParsT += sizeof(tree);
+			}
 			else {
-				if (tree->t == NUM)
-					printf("%s %d %s %d %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
-						tree->val.int_val, string_tokens[tree->parent->t + count_terminal]);
-				else if (tree->t == RNUM)
-					printf("%s %d %s %f %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
-						tree->val.float_val, string_tokens[tree->parent->t + count_terminal]);
-				else
-					printf("%s %d %s ---- %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
-						string_tokens[tree->parent->t + count_terminal]);
+				if (tree->t == NUM) {
+					if (print)
+						printf("%s %d %s %d %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+							tree->val.int_val, string_tokens[tree->parent->t + count_terminal]);
+					noOfParsTNodes++;
+					sizeOfParsT += sizeof(tree);
+				}
+				else if (tree->t == RNUM) {
+					if (print)
+						printf("%s %d %s %f %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+							tree->val.float_val, string_tokens[tree->parent->t + count_terminal]);
+					noOfParsTNodes++;
+					sizeOfParsT += sizeof(tree);
+				}
+				else {
+					if (print)
+						printf("%s %d %s ---- %s yes ----\n",tree->lexeme, tree->line_num, string_tokens[tree->t], 
+							string_tokens[tree->parent->t + count_terminal]);
+					noOfParsTNodes++;
+					sizeOfParsT += sizeof(tree);
+				}
 			}
 		}
-		else
-			printf("---- ---- ---- ---- %s no %s\n", tree->parent == NULL ? "ROOT\0" : string_tokens[tree->parent->t + count_terminal], 
-				string_tokens[tree->t + count_terminal]);
+		else {
+			if (print)
+				printf("---- ---- ---- ---- %s no %s\n", tree->parent == NULL ? "ROOT\0" : string_tokens[tree->parent->t + count_terminal], 
+					string_tokens[tree->t + count_terminal]);
+			noOfParsTNodes++;
+			sizeOfParsT += sizeof(tree);
+		}
 		
 		int i;
 		for(i=1; i<tree->child_count; i++)
-			printTreeInorder(tree->child[i]);
+			printTreeInorder(tree->child[i], print);
 	}
+}
+
+int getNoOfParsTNodes() {
+	return noOfParsTNodes;
+}
+
+int getSizeOfParsT() {
+	return sizeOfParsT;
 }
 
 void setFields(TREENODEPTR tree, struct token **tokens) {
@@ -478,6 +509,7 @@ TREENODEPTR generateParseTree(int *ruleList, int *index, int len, TREENODEPTR pa
 	root->t = n->t;
 	root->t_or_nt = n->t_or_nt;
 	root->parent = parent;
+	
 	int i=0;
 	*index = *index + 1;
 	n = n->next;

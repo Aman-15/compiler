@@ -33,5 +33,6 @@ struct FuncTable* getFuncList();
 void checkIfOutAssigned();
 
 void printSymbolTable();
+int getErrST();
 
 #endif

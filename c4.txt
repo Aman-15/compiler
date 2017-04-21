@@ -9,7 +9,7 @@ start
 	start
 		declare x:integer;
 		x:= 5;		**This x is bound to the offset 6, scope nesting level 2**
-		sum:= sum + k*x;
+		sum:= sum;
 		print(sum);	**Each print statement inside the loop displays result in a new line of the console**
 	end	
 	print(sum);

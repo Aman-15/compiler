@@ -20,7 +20,9 @@ void generateFollowSet(char *s);
 void generateFirstSet(char *s);
 void inputGrammar(char *gramFile);
 int *parseInputSourceCode(struct token* tokens);
-void printTreeInorder(TREENODEPTR tree);
+void printTreeInorder(TREENODEPTR tree, int print);
+int getNoOfParsTNodes();
+int getSizeOfParsT();
 TREENODEPTR generateParseTree(int *ruleList, int *index, int len, TREENODEPTR parent);
 void setFields(TREENODEPTR tree, struct token **tokens);
 

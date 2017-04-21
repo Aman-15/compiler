@@ -3,17 +3,18 @@
 <<<driver program>>>
 start
 	declare list: array[1..10] of integer;
-	declare constArr: array[1..10] of integer;
+	declare constArr:integer;
 	declare sum, p, k:integer;
-	get_value(list);                      **The get_value statement populates the variable identifier according to its type** 
+	get_value(constArr);
 	for(k in 1..10)
 	start
-		constArr[k]:= k*3;            **This loop initializes the array constArr**
-	end
-	for(p in 1..10)
-	start
-		sum:= list[p] + constArr[p];  
-		print(sum);		  
+		constArr:= k;
+		for(p in 1..10)
+		start
+			sum:= constArr;  
+			print(sum);		  
+		end
+		print(constArr);
 	end	
 	print(sum);
 end

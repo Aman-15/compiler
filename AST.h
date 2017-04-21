@@ -1,4 +1,8 @@
-// #include "SymbolTable.h"
+/*
+BATCH NUMBER 75
+AMAN AGARWAL 2014A7PS042P
+MANIK BHANDARI 2014A7PS088P
+*/
 #include "ASTDef.h"
 
 struct ASTNode *createASTNode();
@@ -8,4 +12,7 @@ void addFuncChild(struct ASTNode *parent, struct FuncTable *child);
 void addParaChild(struct ASTNode *parent, struct Parameters *param);
 struct ASTNode *generateAST(TREENODEPTR root);
 
-void printAST();
+void printAST(struct ASTNode *root, int print);
+int getNoOfASTNodes();
+int getSizeOfAST();
+int getErrAst();

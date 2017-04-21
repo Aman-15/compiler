@@ -1,14 +1,4 @@
 /*
-1. Data Type for arrays...done.
-2. error handling...Done at the symbol table level.
-3. checking id in function parameter...done.
-4. CHeck if used module is ever defined...during ast...not done.
-5. Iterative and switch statements, iterator can't be declared....not done.
-6. Testcase4_new - Switch-Case "index" not found....not done.
-7. Redifinition of index int interative statements not done.
-*/
-
-/*
 BATCH NUMBER 75
 AMAN AGARWAL 2014A7PS042P
 MANIK BHANDARI 2014A7PS088P
@@ -34,6 +24,7 @@ char *string_tokens1[] = {
 };
 
 int offset;
+int errST = 0;
 
 /********* Stack Implementation ************/
 
@@ -120,22 +111,13 @@ struct FuncTable* findInFunctionList(char *name) {
 //Recursively checks for the id upto the global tabel.
 int checkIdentifierifDeclared(struct IdTable *table, TREENODEPTR currnode, char *name) {
     if(table == NULL){
-        // if(strcmp(name,"var_2_") == 0){
-        //     printf("because of NULL\n");
-        // }
         return 0;
     }
 
     if (checkinTable(table, name) == 0) {
         if (table->parent){
-            // if(strcmp(name,"var_2_") == 0){
-            //     printf("because parent\n");
-            // }
             return checkIdentifierifDeclared(table->parent, currnode, name);
         }
-        // if(strcmp(name,"var_2_") == 0){
-        //         printf("because parent is null and not in current\n");
-        // }
         return 0;
     }
     struct IdTuple *tuple = table->idTuple;
@@ -154,7 +136,6 @@ int checkinTable(struct IdTable *table, char *name) {
     if (table == NULL)
         return 0;
 
-    // printf("%d %s\n", table->scopeId, name);
     struct IdTuple *tuple = table->idTuple;
     while (tuple) {
         if (strcmp(tuple->name, name) == 0)
@@ -169,7 +150,6 @@ struct Parameters* checkInParameters(struct FuncTable *curr, char *name, TREENOD
     struct Parameters *out = curr->out;
     struct Parameters *in = curr->in;
 
-    // printf("Checking for %s\n", name);
     while (out) {
         if (strcmp(out->name, name) == 0) {
             struct IdTuple *currId = (struct IdTuple*)malloc(sizeof(struct IdTuple));
@@ -310,6 +290,7 @@ void checkIfOutAssigned() {
             struct Parameters *out = curr->out;
             while (out) {
                 if (out->assigned == 0) {
+                    errST = 1;
                     printf("line:%d Output Parameter \"%s\" is never assigned a value\n", out->line_num, out->name);
                 }
                 out = out->next;
@@ -361,7 +342,7 @@ void makeTable(TREENODEPTR treeNode) {
                         currFuncTable->status = declared;
                     }
                     else {
-                        //ERROR (Re declared)
+                    errST = 1;
                         printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                     }
                 }
@@ -376,15 +357,16 @@ void makeTable(TREENODEPTR treeNode) {
                     pop_st(stack); //SEMICOLON pop_stped
 
                     if (checkinTable(currIdTable, _idlist->child[0]->lexeme) == 1) {
-                        //error: already declared
+                    errST = 1;
                         printf("line:%d \"%s\" Re-declaration Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
                     }
                     else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, _idlist->child[0]->lexeme, _idlist->child[0]) != NULL) {
-                        //error: already declared
+                    errST = 1;
                         printf("line:%d \"%s\" Re-declaration of Parameters Error\n", _idlist->child[0]->line_num, _idlist->child[0]->lexeme);
 
                     }
                     else if(strcmp(_idlist->child[0]->lexeme, currIdTable->iterator) == 0){
+                    errST = 1;
                         printf("Line: %d Error: Cannot redeclare the iterator\n", _idlist->parent->child[0]->line_num);
                     }
                     else {
@@ -403,12 +385,15 @@ void makeTable(TREENODEPTR treeNode) {
                         TREENODEPTR n = cur->child[1];
 
                         if (checkinTable(currIdTable, n->lexeme) == 1) {
+                    errST = 1;
                             printf("line:%d \"%s\" Re-declaration Error\n", n->line_num, n->lexeme);
                         }
                         else if (currIdTable->parent == NULL && checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
+                    errST = 1;
                             printf("line:%d \"%s\" Re-declaration of Parameters Error\n", n->line_num, n->lexeme);
                         }
                         else if(strcmp(n->lexeme, currIdTable->iterator) == 0){
+                    errST = 1;
                             printf("Line: %d Error: Cannot redeclare the iterator\n", n->line_num);
                         }
                         else {
@@ -488,7 +473,6 @@ void makeTable(TREENODEPTR treeNode) {
                     currFuncTable->in = in_start;
                     temp->tuple = currId;
                     in->next = NULL;
-                    // printf("\ntype is %s\n", string_tokens1[temp->tuple->type]);
                     strcpy(currId->name, temp->lexeme);
 
 
@@ -496,6 +480,7 @@ void makeTable(TREENODEPTR treeNode) {
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
                         if (checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
+                    errST = 1;
                             printf("line:%d \"%s\" Already in the input parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
@@ -545,6 +530,7 @@ void makeTable(TREENODEPTR treeNode) {
                     struct Parameters *out = NULL;
                     currFuncTable->out = NULL;
                     if (checkInParameters(currFuncTable, temp->lexeme, temp) != NULL) {
+                    errST = 1;
                         printf("line:%d \"%s\" Already in the parameter list\n", temp->line_num, temp->lexeme);
                     }
                     else {
@@ -584,6 +570,7 @@ void makeTable(TREENODEPTR treeNode) {
                         TREENODEPTR n = cur->child[1];
                         _dtype = cur->child[3];
                         if (checkInParameters(currFuncTable, n->lexeme, n) != NULL) {
+                    errST = 1;
                             printf("line:%d \"%s\" Already in the parameter list\n", n->line_num, n->lexeme);
                         }
                         else {
@@ -632,6 +619,7 @@ void makeTable(TREENODEPTR treeNode) {
 
                 else {
                     if (checkIdentifierifDeclared(currIdTable, temp, temp->lexeme) == 0 && checkInParameters(currFuncTable, temp->lexeme, temp) == NULL) {
+                    errST = 1;
                         printf("line:%d variable \"%s\" not Declared\n", temp->line_num, temp->lexeme);
                     }
                     else if (temp->parent->t == assignmentStmt) {
@@ -640,10 +628,12 @@ void makeTable(TREENODEPTR treeNode) {
                             temp1->assigned = 1;
                     }
 
-                    if (temp->tuple->arr_or_not == 1 && temp->parent->t == var && temp->parent->child[1]->child[0]->t == e) {
+                    if (temp->tuple && temp->tuple->arr_or_not == 1 && temp->parent->t == var && temp->parent->child[1]->child[0]->t == e) {
+                    errST = 1;
                         printf("line:%d Array must be indexed\n", temp->line_num);
                     }
-                    else if (temp->tuple->arr_or_not == 1 && temp->parent->t == assignmentStmt && temp->parent->child[1]->child[0]->t == lvalueIDStmt) {
+                    else if (temp->tuple && temp->tuple->arr_or_not == 1 && temp->parent->t == assignmentStmt && temp->parent->child[1]->child[0]->t == lvalueIDStmt) {
+                    errST = 1;
                         printf("line:%d Array must be indexed\n", temp->line_num);
                     }
                 }
@@ -656,10 +646,12 @@ void makeTable(TREENODEPTR treeNode) {
                 pop_st(stack); //function id pop_stped
 
                 if(findInFunctionList(n->lexeme) == NULL){
+                    errST = 1;
                     printf("line:%d module \"%s\" not declared\n", n->line_num, n->lexeme);
                 }
 
                 if(strcmp(currFuncTable->name, n->lexeme) == 0){
+                    errST = 1;
                     printf("Line: %d Error!! Recursion is not allowed\n", n->line_num);
                 }
                 //Handle if module is never defined.. to be done after 
@@ -674,6 +666,7 @@ void makeTable(TREENODEPTR treeNode) {
                 offset = 0;
                 if(f){
                     if(f->status == defined){
+                    errST = 1;
                         printf("line:%d module \"%s\" already defined\n", n->line_num, n->lexeme);
                     }
                     else{
@@ -758,4 +751,8 @@ void printSymbolTable() {
         printIdTable(currFunc, currFunc->idTable, &sno);
         currFunc = currFunc->next;
     }
+}
+
+int getErrST() {
+    return errST;
 }
